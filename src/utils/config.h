@@ -14,13 +14,11 @@
 
 #include <stdlib.h>
 
-const int NUMBER_OF_OWLS = 10;
+static const int NUMBER_OF_OWLS = 10;
 
-const size_t MAX_INPUT_LENGTH = 256;
-const size_t MAX_TREE_DEPTH = 128;
-const size_t MAX_ANSWER_LENGTH = 16;
+static const size_t MAX_FORMULA_LENGTH = 1024;
 
-const size_t MAX_NAME_LENGTH = 1024;
+static const size_t MAX_NAME_LENGTH = 1024;
 #define DEFAULT_DB_NAME "simple.math"
 
 #endif

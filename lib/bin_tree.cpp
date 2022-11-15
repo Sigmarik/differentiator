@@ -151,30 +151,95 @@ void Equation_write_as_input(const Equation* equation, caret_t* caret, int* cons
     caret_printf(caret, ")");
 }
 
-// TODO: This --v does not work yet.
+#define print_left()  Equation_write_as_input(equation->left,  caret, err_code)
+#define print_right() Equation_write_as_input(equation->right, caret, err_code)
+#define surround(left, code, right, condition) do { \
+    bool __cond = (condition);                      \
+    if (__cond) caret_printf(caret, left);          \
+    code                                            \
+    if (__cond) caret_printf(caret, right);         \
+} while (0)
+
 void Equation_write_as_tex(const Equation* equation, caret_t* caret, int* const err_code) {
     _LOG_FAIL_CHECK_(!BinaryTree_status(equation), "error", ERROR_REPORTS, return, err_code, EINVAL);
     _LOG_FAIL_CHECK_(caret, "error", ERROR_REPORTS, return, err_code, EINVAL);
 
-    caret_printf(caret, "(");
     switch (equation->type) {
-        case TYPE_VAR:
-            caret_printf(caret, "%c", (char)equation->value.id);
+    case TYPE_VAR:
+        caret_printf(caret, "%c", (char)equation->value.id);
+        break;
+
+    case TYPE_CONST:
+        caret_printf(caret, "%lg", equation->value.dbl);
+        break;
+
+    case TYPE_OP: {
+        switch (equation->value.op) {
+        case OP_POW:
+            surround("(", { Equation_write_as_tex(equation->left, caret); }, ")",
+                equation->left->type == TYPE_OP);
+
+            caret_printf(caret, "^");
+
+            surround("{", { Equation_write_as_tex(equation->right, caret); }, "}", true);
+
             break;
-        case TYPE_CONST:
-            caret_printf(caret, "%lg", equation->value.dbl);
+
+        case OP_DIV:
+            caret_printf(caret, "\\frac");
+
+            surround("{", { Equation_write_as_tex(equation->left,  caret); }, "}", true);
+            surround("{", { Equation_write_as_tex(equation->right, caret); }, "}", true);
+
             break;
-        case TYPE_OP:
-            Equation_write_as_input(equation->left, caret, err_code);
+
+        case OP_MUL:
+            surround("(", { Equation_write_as_tex(equation->left, caret); }, ")",
+                equation->left->type == TYPE_OP && OP_PRIORITY[equation->left->type] < OP_PRIORITY[OP_MUL]);
+
+            if (!(equation->left->type == TYPE_CONST && equation->right->type == TYPE_VAR))
+                caret_printf(caret, "\\cdot");
+
+            surround("(", { Equation_write_as_tex(equation->right, caret); }, ")",
+                equation->left->type == TYPE_OP && OP_PRIORITY[equation->right->type] < OP_PRIORITY[OP_MUL]);
+            
+            break;
+
+        case OP_SIN:
+        case OP_COS:
+            caret_printf(caret, "\\%s", OP_TEXT_REPS[equation->value.op]);
+            surround("(", { Equation_write_as_tex(equation->right, caret); }, ")", true);
+            break;
+        
+        case OP_ADD:
+        case OP_SUB:
+            surround("(", { Equation_write_as_tex(equation->left, caret); }, ")",
+                equation->left->type == TYPE_OP && OP_PRIORITY[equation->left->type] < OP_PRIORITY[OP_MUL]);
+
             caret_printf(caret, "%s", OP_TEXT_REPS[equation->value.op]);
-            Equation_write_as_input(equation->right, caret, err_code);
+
+            surround("(", { Equation_write_as_tex(equation->right, caret); }, ")",
+                equation->left->type == TYPE_OP && OP_PRIORITY[equation->right->type] < OP_PRIORITY[OP_MUL]);
+            
+            break;
+        case OP_NONE:
+            log_printf(ERROR_REPORTS, "error", "Encountered OP_NONE while processing node %p.\n", equation);
+            if (err_code) *err_code = EINVAL;
             break;
         default:
-            log_printf(ERROR_REPORTS, "error", 
-                "Somehow NodeType equation->type had an incorrect value of %d.\n", equation->type);
+            log_printf(ERROR_REPORTS, "error", "Encountered unknown operation of %d while processing node %p.\n",
+                equation->value.op, equation);
+            if (err_code) *err_code = EINVAL;
             break;
+        }
+
+        break;
     }
-    caret_printf(caret, ")");
+    default:
+        log_printf(ERROR_REPORTS, "error", 
+            "Somehow NodeType equation->type had an incorrect value of %d.\n", equation->type);
+        break;
+    }
 }
 
 BinaryTree_status_t BinaryTree_status(const Equation* equation) {

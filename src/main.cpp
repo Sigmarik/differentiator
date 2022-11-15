@@ -63,5 +63,12 @@ int main(const int argc, const char** argv) {
 
     Equation_dump(equation, ABSOLUTE_IMPORTANCE);
 
+    char output[MAX_FORMULA_LENGTH] = "";
+    caret_t caret = output;
+    
+    Equation_write_as_tex(equation, &caret, &errno);
+
+    printf("$%s$\n", output);
+
     return_clean(errno == 0 ? EXIT_SUCCESS : EXIT_FAILURE);
 }
