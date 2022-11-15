@@ -17,10 +17,11 @@
  * @param file write destination
  * @param err_code variable to use as errno
  */
-void recursive_graph_dump(const Equation* equation, FILE* file, int err_code = NULL);
+void recursive_graph_dump(const Equation* equation, FILE* file, int* const err_code = NULL);
 
 Equation* new_Equation(NodeType type, NodeValue value, Equation* left, Equation* right, int* const err_code) {
     Equation* equation = (Equation*) calloc(1, sizeof(*equation));
+    _LOG_FAIL_CHECK_(equation, "error", ERROR_REPORTS, return NULL, err_code, ENOMEM);
 
     equation->type = type;
     equation->value = value;
@@ -34,40 +35,46 @@ void Equation_dtor(Equation** equation) {
     if (!equation)  return;
     if (!*equation) return;
 
-    if ((*equation)->left)  Equation_dtor((*equation)->left);
-    if ((*equation)->right) Equation_dtor((*equation)->right);
+    if ((*equation)->left)  Equation_dtor(&(*equation)->left);
+    if ((*equation)->right) Equation_dtor(&(*equation)->right);
+    free(*equation);
     *equation = NULL;
 }
 
 Equation* Equation_read(caret_t* caret, int* const err_code) {
-    _LOG_FAIL_CHECK_(caret, "error", ERROR_REPORTS, return, err_code, EINVAL);
-    _LOG_FAIL_CHECK_(*caret, "error", ERROR_REPORTS, return, err_code, EINVAL);
+    _LOG_FAIL_CHECK_(caret, "error", ERROR_REPORTS, return NULL, err_code, EINVAL);
+    _LOG_FAIL_CHECK_(*caret, "error", ERROR_REPORTS, return NULL, err_code, EINVAL);
 
     Equation* equation = new_Equation(TYPE_CONST, {.id = 0}, NULL, NULL);
 
     if ((*caret)[1] != '(') {
         if (isdigit((*caret)[1])) {
-            double value = 0;
+            equation->type = TYPE_CONST;
             int delta = 0;
-            sscanf(*caret + 1, "%lf%n", &value, &delta);
+            sscanf(*caret + 1, "%lf%n", &equation->value.dbl, &delta);
             *caret += delta + 2;
                     /*  ^-- length of the " (***) " postfix  */
         } else {
-            equation->value.id = tolower((*caret)[1]);
+            equation->type = TYPE_VAR;
+            equation->value.id = (unsigned char)tolower((*caret)[1]);
             *caret += 3;
                    /* ^-- length of the " (x) " thingy */
         }
     } else {
-        equation->left = Equation_read(caret, err_code);
-        equation->type = TYPE_OP;
-        switch (**caret) {
-            case '+': equation->value.op = OP_ADD; break;
-            case '-': equation->value.op = OP_SUB; break;
-            case '*': equation->value.op = OP_MUL; break;
-            case '/': equation->value.op = OP_DIV; break;
-        }
         ++*caret;
+        equation->type = TYPE_OP;
+        equation->left = Equation_read(caret, err_code);
+        int delta = 1;
+        equation->value.op = OP_NONE;
+        for (unsigned int id = OP_NONE; id < OP_TYPE_COUNT; ++id) {
+            if (!strncmp(*caret, OP_TEXT_REPS[id], strlen(OP_TEXT_REPS[id]))) {
+                equation->value.op = (Operator)id;
+                delta = (int)strlen(OP_TEXT_REPS[id]);
+            }
+        }
+        *caret += delta;
         equation->right = Equation_read(caret, err_code);
+        ++*caret;
     }
 
     return equation;
@@ -129,17 +136,22 @@ void Equation_write_as_input(const Equation* equation, caret_t* caret, int* cons
             caret_printf(caret, "%c", (char)equation->value.id);
             break;
         case TYPE_CONST:
-            caret_printf(caret, "%lf", equation->value.dbl);
+            caret_printf(caret, "%lg", equation->value.dbl);
             break;
         case TYPE_OP:
             Equation_write_as_input(equation->left, caret, err_code);
-            caret_printf(caret, "%c", (char)equation->value.op);
+            caret_printf(caret, "%s", OP_TEXT_REPS[equation->value.op]);
             Equation_write_as_input(equation->right, caret, err_code);
+            break;
+        default:
+            log_printf(ERROR_REPORTS, "error", 
+                "Somehow NodeType equation->type had an incorrect value of %d.\n", equation->type);
             break;
     }
     caret_printf(caret, ")");
 }
 
+// TODO: This --v does not work yet.
 void Equation_write_as_tex(const Equation* equation, caret_t* caret, int* const err_code) {
     _LOG_FAIL_CHECK_(!BinaryTree_status(equation), "error", ERROR_REPORTS, return, err_code, EINVAL);
     _LOG_FAIL_CHECK_(caret, "error", ERROR_REPORTS, return, err_code, EINVAL);
@@ -150,12 +162,16 @@ void Equation_write_as_tex(const Equation* equation, caret_t* caret, int* const 
             caret_printf(caret, "%c", (char)equation->value.id);
             break;
         case TYPE_CONST:
-            caret_printf(caret, "%lf", equation->value.dbl);
+            caret_printf(caret, "%lg", equation->value.dbl);
             break;
         case TYPE_OP:
             Equation_write_as_input(equation->left, caret, err_code);
-            caret_printf(caret, "%c", (char)equation->value.op);
+            caret_printf(caret, "%s", OP_TEXT_REPS[equation->value.op]);
             Equation_write_as_input(equation->right, caret, err_code);
+            break;
+        default:
+            log_printf(ERROR_REPORTS, "error", 
+                "Somehow NodeType equation->type had an incorrect value of %d.\n", equation->type);
             break;
     }
     caret_printf(caret, ")");
@@ -177,6 +193,29 @@ BinaryTree_status_t BinaryTree_status(const Equation* equation) {
     return status;
 }
 
-void recursive_graph_dump(const Equation* equation, FILE* file, int err_code) {
-    
+void recursive_graph_dump(const Equation* equation, FILE* file, int* const err_code) {
+    _LOG_FAIL_CHECK_(!BinaryTree_status(equation), "error", ERROR_REPORTS, return, err_code, EINVAL);
+    _LOG_FAIL_CHECK_(file, "error", ERROR_REPORTS, return, err_code, ENOENT);
+
+    if (!equation || !file) return;
+    fprintf(file, "\tV%p [shape=\"box\" label=\"", equation);
+    switch (equation->type) {
+        case TYPE_CONST: fprintf(file, "%lg", equation->value.dbl);             break;
+        case TYPE_OP: fprintf(file, "%s", OP_TEXT_REPS[equation->value.op]);    break;
+        case TYPE_VAR: fprintf(file, "%c", (char)equation->value.id);           break;
+        default:
+            log_printf(ERROR_REPORTS, "error", 
+                "Somehow NodeType equation->type had an incorrect value of %d.\n", equation->type);
+            break;
+    }
+    fprintf(file, "\"]\n");
+
+    if (equation->left) {
+        recursive_graph_dump(equation->left, file);
+        fprintf(file, "\tV%p -> V%p [arrowhead=\"none\"]\n", equation, equation->left);
+    }
+    if (equation->right) {
+        recursive_graph_dump(equation->right, file);
+        fprintf(file, "\tV%p -> V%p [arrowhead=\"none\"]\n", equation, equation->right);
+    }
 }

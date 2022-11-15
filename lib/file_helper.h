@@ -13,6 +13,8 @@
 #define FILE_HELPER_H
 
 #include <stdio.h>
+#include <fcntl.h>
+#include <unistd.h>
 
 /**
  * @brief Jump file reading point to the first mentioned specified character.
@@ -43,6 +45,14 @@ size_t get_file_size(int fd);
 typedef char* caret_t;
 
 int caret_printf(caret_t* caret, const char* format, ...) __attribute__((format (printf, 2, 3)));
+
+/**
+ * @brief Read whole content of the file and return pointer to the buffer.
+ * 
+ * @param fname name of the file to open
+ * @return char* pointer to the file buffer
+ */
+char* read_whole(const char* fname);
 
 /**
  * @brief (USE ONLY INSIDE exec_on_char STATEMENT) Stop reading symbols and continue execution.

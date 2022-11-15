@@ -18,13 +18,11 @@ typedef int BinaryTree_status_t;
 
 enum BinaryTreeStatus {
     TREE_NULL               = 1<<0,
-    TREE_NULL_ROOT          = 1<<2,
-    TREE_INV_CONNECTIONS    = 1<<3,
+    TREE_INV_CONNECTIONS    = 1<<2,
 };
 
 static const char* TREE_STATUS_DESCR[] = {
     "Tree pointer was NULL",
-    "Tree root was NULL",
     "Tree had invalid connections",
 };
 

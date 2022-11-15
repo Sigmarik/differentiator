@@ -117,40 +117,4 @@ const char* get_output_file_name(const int argc, const char** argv);
     printf("yes/no expected, try again.\n>>> ");                            \
 } while(true)
 
-/**
- * @brief Execute user command.
- * 
- * @param cmd command
- * @param tree decision tree
- * @param err_code variable to use as errno
- */
-void execute_command(char cmd, BinaryTree* tree, int* const err_code = NULL);
-
-/**
- * @brief Guess the word using user input.
- * 
- * @param tree tree to guess the word in
- * @param err_code variable to use as errno
- */
-void guess(BinaryTree* tree, int* const err_code = NULL);
-
-/**
- * @brief Give definition of the word.
- * 
- * @param tree tree to search in
- * @param word word to define
- * @param err_code variable to use as errno
- */
-void define(BinaryTree* tree, const char* word, int* const err_code = NULL);
-
-/**
- * @brief Compare definitions of two words.
- * 
- * @param tree tree to search in
- * @param word_a first word
- * @param word_b second word
- * @param err_code variable to use as errno
- */
-void compare(BinaryTree* tree, const char* word_a, const char* word_b, int* const err_code = NULL);
-
 #endif

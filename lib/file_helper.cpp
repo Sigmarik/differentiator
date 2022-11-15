@@ -2,6 +2,7 @@
 
 #include <sys/stat.h>
 #include <stdarg.h>
+#include <stdlib.h>
 
 int skip_to_char(FILE* file, const char target, char* const buffer, size_t limit) {
     if (file == NULL) return -1;
@@ -40,4 +41,21 @@ int caret_printf(caret_t* caret, const char* format, ...) {
     va_end(args);
 
     return delta;
+}
+
+char* read_whole(const char* fname) {
+    int fd = open(fname, O_RDONLY);
+
+    if (!fd) return NULL;
+
+    size_t buf_size = get_file_size(fd) + 1;
+    char* buffer = (char*) calloc(buf_size, sizeof(buffer));
+
+    if (!buffer) return 0;
+
+    read(fd, buffer, buf_size);
+
+    buffer[buf_size - 1] = '\0';
+
+    return buffer;
 }

@@ -21,4 +21,34 @@ const size_t TREE_DRAW_REQUEST_SIZE = 512;
 #define TREE_LOG_ASSET_FOLD_NAME "log_assets"
 #define TREE_DUMP_TAG "tree_dump"
 
+enum NodeType {
+    TYPE_OP,
+    TYPE_VAR,
+    TYPE_CONST,
+};
+
+enum Operator {
+    OP_NONE = 0,
+    OP_ADD,
+    OP_SUB,
+    OP_MUL,
+    OP_DIV,
+    OP_SIN,
+    OP_COS,
+    OP_POW,
+};
+
+static const char* OP_TEXT_REPS[] = {
+    "NONE",
+    "+",
+    "-",
+    "*",
+    "/",
+    "sin",
+    "cos",
+    "^",
+};
+
+static const size_t OP_TYPE_COUNT = sizeof(OP_TEXT_REPS) / sizeof(*OP_TEXT_REPS);
+
 #endif
