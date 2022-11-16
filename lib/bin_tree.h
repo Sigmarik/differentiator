@@ -90,4 +90,21 @@ void Equation_write_as_tex(const Equation* equation, caret_t* caret, int* const 
  */
 BinaryTree_status_t BinaryTree_status(const Equation* equation);
 
+/**
+ * @brief Make a copy of the equation and return pointer to it.
+ * 
+ * @param equation
+ * @return pointer to the copy of the equation
+ */
+Equation* Equation_copy(const Equation* equation);
+
+/**
+ * @brief Differentiate the equation.
+ * 
+ * @param equation
+ * @param var_id ID of the variable to differentiate from
+ * @return pointer to the differentiated equation
+ */
+Equation* Equation_diff(const Equation* equation, const uintptr_t var_id);
+
 #endif

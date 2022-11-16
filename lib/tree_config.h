@@ -14,12 +14,14 @@
 
 #include <stdlib.h>
 
-const size_t TREE_PICT_NAME_SIZE = 256;
-const size_t TREE_DRAW_REQUEST_SIZE = 512;
+static const size_t TREE_PICT_NAME_SIZE = 256;
+static const size_t TREE_DRAW_REQUEST_SIZE = 512;
 
 #define TREE_TEMP_DOT_FNAME "temp.dot"
 #define TREE_LOG_ASSET_FOLD_NAME "log_assets"
 #define TREE_DUMP_TAG "tree_dump"
+
+static const double CMP_EPS = 1e-7;
 
 enum NodeType {
     TYPE_OP,

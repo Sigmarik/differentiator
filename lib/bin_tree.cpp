@@ -10,6 +10,8 @@
 
 #include "tree_config.h"
 
+#define equal(alpha, beta) ( abs(alpha - beta) < CMP_EPS )
+
 /**
  * @brief Print subtree to the .dot file.
  * 
@@ -257,6 +259,75 @@ BinaryTree_status_t BinaryTree_status(const Equation* equation) {
 
     return status;
 }
+
+Equation* Equation_copy(const Equation* equation) {
+    if (!equation) return NULL;
+    return new_Equation(equation->type, equation->value, Equation_copy(equation->left), Equation_copy(equation->right));
+}
+
+#define eq_cL Equation_copy(equation->left)
+#define eq_cR Equation_copy(equation->right)
+#define eq_dL Equation_diff(equation->left,  var_id)
+#define eq_dR Equation_diff(equation->right, var_id)
+#define eq_const(val)                   new_Equation(TYPE_CONST, { .dbl = ( val )       }, NULL, NULL)
+#define eq_var(id)                      new_Equation(TYPE_OP,    { .op = OP_ADD         }, NULL, NULL)
+#define eq_op(operation, left, right)   new_Equation(TYPE_OP,    { .op = ( operation )  }, left, right)
+#define eq_add(left, right) eq_op(OP_ADD, left, right)
+#define eq_sub(left, right) eq_op(OP_SUB, left, right)
+#define eq_mul(left, right) eq_op(OP_MUL, left, right)
+#define eq_div(left, right) eq_op(OP_DIV, left, right)
+#define eq_pow(left, right) eq_op(OP_POW, left, right)
+#define eq_sin(arg) eq_op(OP_SIN, eq_const(0),  arg)
+#define eq_cos(arg) eq_op(OP_COS, eq_const(0),  arg)
+#define eq_neg(arg) eq_op(OP_MUL, eq_const(-1), arg)
+
+Equation* Equation_diff(const Equation* equation, const uintptr_t var_id) {
+    if (!equation) return NULL;
+    switch (equation->type) {
+    case TYPE_VAR:
+        if (equation->value.id == var_id)
+            return eq_const(1);
+        else return Equation_copy(equation);
+    
+    case TYPE_CONST: return eq_const(0);
+
+    case TYPE_OP:
+        switch (equation->value.op) {
+        case OP_ADD: return eq_add(eq_dL, eq_dR);
+        case OP_SUB: return eq_sub(eq_dL, eq_dR);
+        case OP_MUL: return eq_add(eq_mul(eq_dL, eq_cR), eq_mul(eq_cL, eq_dR));
+        case OP_DIV: return eq_div(eq_sub(eq_mul(eq_dL, eq_cR), eq_mul(eq_cL, eq_dR)), eq_pow(eq_cR, eq_const(2)));
+        case OP_SIN: return eq_mul(eq_cos(eq_cR), eq_dR);
+        case OP_COS: return eq_mul(eq_neg(eq_sin(eq_cR)), eq_dR);
+        case OP_POW:
+            log_printf(ERROR_REPORTS, "error", "POW derivatives are not supported yet. Sorry.\n");
+            return Equation_copy(equation);
+        case OP_NONE:
+            log_printf(ERROR_REPORTS, "error", "NONE operation detected when differentiating equation %p.\n", equation);
+            return Equation_copy(equation);
+        default:
+            log_printf(ERROR_REPORTS, "error", 
+                "Somehow Operation equation->value.op had an incorrect value of %d.\n", equation->value.op);
+            break;
+        }
+        break;
+
+    default:
+        log_printf(ERROR_REPORTS, "error", 
+            "Somehow NodeType equation->type had an incorrect value of %d.\n", equation->type);
+        break;
+    }
+    return Equation_copy(equation);
+}
+
+#define eq_L simple_l
+#define eq_R simple_r
+#define eq_same new_Equation(equation->type, equation->value, eq_L, eq_R)
+#define eq_operation(operator) do {                                 \
+    if (eq_L->type == TYPE_CONST && eq_R->type == TYPE_CONST)       \
+        return eq_const(eq_L->value.dbl operator eq_R->value.dbl);  \
+    return eq_same;                                                 \
+} while (0)
 
 void recursive_graph_dump(const Equation* equation, FILE* file, int* const err_code) {
     _LOG_FAIL_CHECK_(!BinaryTree_status(equation), "error", ERROR_REPORTS, return, err_code, EINVAL);

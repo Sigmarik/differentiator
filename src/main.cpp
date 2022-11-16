@@ -68,7 +68,21 @@ int main(const int argc, const char** argv) {
     
     Equation_write_as_tex(equation, &caret, &errno);
 
-    printf("$%s$\n", output);
+    printf("\\[f(x) = %s\\]\n", output);
+
+    for (int power = 1; power < 4; ++power) {
+        memset(output, 0, sizeof(output));
+
+        Equation* deriv = Equation_diff(equation, 'x');
+        Equation_dtor(&equation);
+        equation = deriv;
+
+        caret = output;
+
+        Equation_write_as_tex(equation, &caret, &errno);
+
+        printf("\\[f^{(%d)}(x) = %s\\]\n", power, output);
+    }
 
     return_clean(errno == 0 ? EXIT_SUCCESS : EXIT_FAILURE);
 }
