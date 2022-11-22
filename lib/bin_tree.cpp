@@ -43,45 +43,6 @@ void Equation_dtor(Equation** equation) {
     *equation = NULL;
 }
 
-Equation* Equation_read(caret_t* caret, int* const err_code) {
-    _LOG_FAIL_CHECK_(caret, "error", ERROR_REPORTS, return NULL, err_code, EINVAL);
-    _LOG_FAIL_CHECK_(*caret, "error", ERROR_REPORTS, return NULL, err_code, EINVAL);
-
-    Equation* equation = new_Equation(TYPE_CONST, {.id = 0}, NULL, NULL);
-
-    if ((*caret)[1] != '(') {
-        if (isdigit((*caret)[1])) {
-            equation->type = TYPE_CONST;
-            int delta = 0;
-            sscanf(*caret + 1, "%lf%n", &equation->value.dbl, &delta);
-            *caret += delta + 2;
-                    /*  ^-- length of the " (***) " postfix  */
-        } else {
-            equation->type = TYPE_VAR;
-            equation->value.id = (unsigned char)tolower((*caret)[1]);
-            *caret += 3;
-                   /* ^-- length of the " (x) " thingy */
-        }
-    } else {
-        ++*caret;
-        equation->type = TYPE_OP;
-        equation->left = Equation_read(caret, err_code);
-        int delta = 1;
-        equation->value.op = OP_NONE;
-        for (unsigned int id = OP_NONE; id < OP_TYPE_COUNT; ++id) {
-            if (!strncmp(*caret, OP_TEXT_REPS[id], strlen(OP_TEXT_REPS[id]))) {
-                equation->value.op = (Operator)id;
-                delta = (int)strlen(OP_TEXT_REPS[id]);
-            }
-        }
-        *caret += delta;
-        equation->right = Equation_read(caret, err_code);
-        ++*caret;
-    }
-
-    return equation;
-}
-
 static size_t PictCount = 0;
 
 void _Equation_dump_graph(const Equation* equation, unsigned int importance) {

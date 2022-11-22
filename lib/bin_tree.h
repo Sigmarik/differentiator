@@ -38,14 +38,6 @@ Equation* new_Equation(NodeType type, NodeValue value, Equation* left, Equation*
 void Equation_dtor(Equation** node);
 
 /**
- * @brief Create binary tree from given data base.
- * 
- * @param equation
- * @param text
- */
-Equation* Equation_read(caret_t* caret, int* const err_code);
-
-/**
  * @brief Dump the list into logs.
  * 
  * @param list
