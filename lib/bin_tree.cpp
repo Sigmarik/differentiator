@@ -89,31 +89,6 @@ void _Equation_dump_graph(const Equation* equation, unsigned int importance) {
                 "\n<details><summary>Graph</summary><img src=\"%s\"></details>\n", pict_name);
 }
 
-void Equation_write_as_input(const Equation* equation, caret_t* caret, int* const err_code) {
-    _LOG_FAIL_CHECK_(!BinaryTree_status(equation), "error", ERROR_REPORTS, return, err_code, EINVAL);
-    _LOG_FAIL_CHECK_(caret, "error", ERROR_REPORTS, return, err_code, EINVAL);
-
-    caret_printf(caret, "(");
-    switch (equation->type) {
-        case TYPE_VAR:
-            caret_printf(caret, "%c", (char)equation->value.id);
-            break;
-        case TYPE_CONST:
-            caret_printf(caret, "%lg", equation->value.dbl);
-            break;
-        case TYPE_OP:
-            Equation_write_as_input(equation->left, caret, err_code);
-            caret_printf(caret, "%s", OP_TEXT_REPS[equation->value.op]);
-            Equation_write_as_input(equation->right, caret, err_code);
-            break;
-        default:
-            log_printf(ERROR_REPORTS, "error", 
-                "Somehow NodeType equation->type had an incorrect value of %d.\n", equation->type);
-            break;
-    }
-    caret_printf(caret, ")");
-}
-
 #define print_left()  Equation_write_as_input(equation->left,  caret, err_code)
 #define print_right() Equation_write_as_input(equation->right, caret, err_code)
 #define surround(left, code, right, condition) do { \
