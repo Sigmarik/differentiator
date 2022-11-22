@@ -23,6 +23,7 @@
 #include "utils/config.h"
 
 #include "lib/bin_tree.h"
+#include "lib/grammar.h"
 
 #include "utils/main_utils.h"
 
@@ -54,7 +55,7 @@ int main(const int argc, const char** argv) {
     char* source_equation = read_whole(f_name);
     caret_t source_caret = source_equation;
 
-    Equation* equation = Equation_read(&source_caret, &errno);
+    Equation* equation = parse((const char**)&source_caret);
     track_allocation(equation, Equation_dtor);
 
     free(source_equation);
