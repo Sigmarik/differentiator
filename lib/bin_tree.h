@@ -90,4 +90,11 @@ Equation* Equation_copy(const Equation* equation);
  */
 Equation* Equation_diff(const Equation* equation, const uintptr_t var_id);
 
+/**
+ * @brief Simplify the equation (collapse constants, remove trivial operations).
+ * 
+ * @param equation 
+ */
+void Equation_simplify(Equation* equation, int* const err_code = NULL);
+
 #endif

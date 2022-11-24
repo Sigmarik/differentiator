@@ -75,6 +75,7 @@ int main(const int argc, const char** argv) {
         memset(output, 0, sizeof(output));
 
         Equation* deriv = Equation_diff(equation, 'x');
+        Equation_simplify(deriv);
         Equation_dtor(&equation);
         equation = deriv;
 

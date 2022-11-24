@@ -4,6 +4,7 @@
 #include <cstring>
 #include <time.h>
 #include <ctype.h>
+#include <math.h>
 
 #include "util/dbg/debug.h"
 #include "file_helper.h"
@@ -19,7 +20,21 @@
  * @param file write destination
  * @param err_code variable to use as errno
  */
-void recursive_graph_dump(const Equation* equation, FILE* file, int* const err_code = NULL);
+static void recursive_graph_dump(const Equation* equation, FILE* file, int* const err_code = NULL);
+
+/**
+ * @brief Collapse the equation to constant.
+ * 
+ * @param equation 
+ */
+static void collapse(Equation* equation);
+
+/**
+ * @brief Resolve useless operations, such as multiplication by 1 or 0.
+ * 
+ * @param equation
+ */
+static void rm_useless(Equation* equation);
 
 Equation* new_Equation(NodeType type, NodeValue value, Equation* left, Equation* right, int* const err_code) {
     Equation* equation = (Equation*) calloc(1, sizeof(*equation));
@@ -133,13 +148,13 @@ void Equation_write_as_tex(const Equation* equation, caret_t* caret, int* const 
 
         case OP_MUL:
             surround("(", { Equation_write_as_tex(equation->left, caret); }, ")",
-                equation->left->type == TYPE_OP && OP_PRIORITY[equation->left->type] < OP_PRIORITY[OP_MUL]);
+                equation->left->type == TYPE_OP && OP_PRIORITY[equation->left->value.op] < OP_PRIORITY[equation->value.op]);
 
-            if (!(equation->left->type == TYPE_CONST && equation->right->type == TYPE_VAR))
+            if (equation->left->type == TYPE_CONST && equation->right->type == TYPE_CONST)
                 caret_printf(caret, "\\cdot");
 
             surround("(", { Equation_write_as_tex(equation->right, caret); }, ")",
-                equation->left->type == TYPE_OP && OP_PRIORITY[equation->right->type] < OP_PRIORITY[OP_MUL]);
+                equation->right->type == TYPE_OP && OP_PRIORITY[equation->right->value.op] < OP_PRIORITY[equation->value.op]);
             
             break;
 
@@ -152,12 +167,12 @@ void Equation_write_as_tex(const Equation* equation, caret_t* caret, int* const 
         case OP_ADD:
         case OP_SUB:
             surround("(", { Equation_write_as_tex(equation->left, caret); }, ")",
-                equation->left->type == TYPE_OP && OP_PRIORITY[equation->left->type] < OP_PRIORITY[OP_MUL]);
+                equation->left->type == TYPE_OP && OP_PRIORITY[equation->left->value.op] < OP_PRIORITY[equation->value.op]);
 
             caret_printf(caret, "%s", OP_TEXT_REPS[equation->value.op]);
 
             surround("(", { Equation_write_as_tex(equation->right, caret); }, ")",
-                equation->left->type == TYPE_OP && OP_PRIORITY[equation->right->type] < OP_PRIORITY[OP_MUL]);
+                equation->right->type == TYPE_OP && OP_PRIORITY[equation->right->value.op] < OP_PRIORITY[equation->value.op]);
             
             break;
         case OP_NONE:
@@ -256,14 +271,28 @@ Equation* Equation_diff(const Equation* equation, const uintptr_t var_id) {
     return Equation_copy(equation);
 }
 
-#define eq_L simple_l
-#define eq_R simple_r
-#define eq_same new_Equation(equation->type, equation->value, eq_L, eq_R)
-#define eq_operation(operator) do {                                 \
-    if (eq_L->type == TYPE_CONST && eq_R->type == TYPE_CONST)       \
-        return eq_const(eq_L->value.dbl operator eq_R->value.dbl);  \
-    return eq_same;                                                 \
-} while (0)
+#define eq_t_const(eq)  ( eq->type == TYPE_CONST )
+#define eq_t_op(eq)     ( eq->type == TYPE_OP )
+#define eq_t_var(eq)    ( eq->type == TYPE_VAR )
+#define eq_is_val(eq, val)      ( eq->type == TYPE_CONST && equal(eq->value.dbl, val) )
+#define eq_is_op(eq, oper)      ( eq->type == TYPE_OP && eq->value.op == oper )
+#define eq_is_var(eq, var_id)   ( eq->type == TYPE_VAR && eq->value.id == var_id )
+#define eq_L ( equation->left )
+#define eq_R ( equation->right )
+
+void Equation_simplify(Equation* equation, int* const err_code) {
+    if (!equation) return;
+    _LOG_FAIL_CHECK_(!BinaryTree_status(equation), "error", ERROR_REPORTS, return, err_code, EINVAL);
+
+    if (!equation->type == TYPE_OP) return;
+
+    Equation_simplify(eq_L, err_code);
+    Equation_simplify(eq_R, err_code);
+
+    collapse(equation);
+
+    rm_useless(equation);
+}
 
 void recursive_graph_dump(const Equation* equation, FILE* file, int* const err_code) {
     _LOG_FAIL_CHECK_(!BinaryTree_status(equation), "error", ERROR_REPORTS, return, err_code, EINVAL);
@@ -289,5 +318,95 @@ void recursive_graph_dump(const Equation* equation, FILE* file, int* const err_c
     if (equation->right) {
         recursive_graph_dump(equation->right, file);
         fprintf(file, "\tV%p -> V%p [arrowhead=\"none\"]\n", equation, equation->right);
+    }
+}
+
+#define eq_value ( equation->value.dbl )
+#define get_value(eq) ( eq->value.dbl )
+#define as_op(operation) eq_value = get_value(eq_L) operation get_value(eq_R); break
+
+static void collapse(Equation* equation) {
+    if (!equation || !eq_t_op(equation)) return;
+    if (!eq_t_const(eq_L) || !eq_t_const(eq_R)) return;
+
+    if ( equation->value.op == OP_DIV && ( equal(get_value(eq_R), 0.0) ||
+        !equal(get_value(eq_L) / get_value(eq_R), round(get_value(eq_L) / get_value(eq_R))) ) ) return;
+    
+    if ( equation->value.op == OP_POW && !equal(get_value(eq_R), round(get_value(eq_R))) ) return;
+    
+    switch (equation->value.op) {
+    case OP_ADD: as_op(+);
+    case OP_SUB: as_op(-);
+    case OP_MUL: as_op(*);
+    case OP_DIV: as_op(/);
+    case OP_POW:
+        eq_value = pow(get_value(eq_L), get_value(eq_R));
+        break;
+    case OP_SIN:
+    case OP_COS:
+    case OP_NONE:
+    default: return;
+    }
+
+    equation->type = TYPE_CONST;
+
+    Equation_dtor(&equation->left);
+    Equation_dtor(&equation->right);
+}
+
+#define keep_branch(branch) do {        \
+    if (eq_L == branch)                 \
+        Equation_dtor(&eq_R);           \
+    else                                \
+        Equation_dtor(&eq_L);           \
+    equation->type  = branch->type;     \
+    equation->left  = branch->left;     \
+    equation->right = branch->right;    \
+    equation->value = branch->value;    \
+    free(branch);                       \
+} while (0)
+
+#define keep_const(const_value) do {    \
+    equation->type = TYPE_CONST;        \
+    Equation_dtor(&equation->left);     \
+    Equation_dtor(&equation->right);    \
+    equation->value.dbl = (const_value);\
+} while (0)
+
+static void rm_useless(Equation* equation) {
+    if (!equation || !eq_t_op(equation)) return;
+    if (!eq_t_const(eq_L) && !eq_t_const(eq_R)) return;
+    
+    Equation* const_branch = eq_t_const(eq_L) ? eq_L : eq_R;
+    Equation* undef_branch = eq_t_const(eq_L) ? eq_R : eq_L;
+
+    switch (equation->value.op) {
+    case OP_ADD:
+    case OP_SUB:
+        if (equal(const_branch->value.dbl, 0.0))
+            keep_branch(undef_branch);
+        break;
+    case OP_MUL:
+        if (equal(const_branch->value.dbl, 1.0))
+            keep_branch(undef_branch);
+        else if (equal(const_branch->value.dbl, 0.0))
+            keep_const(0.0);
+        break;
+    case OP_DIV:
+        if (equal(eq_R->value.dbl, 1.0))
+            keep_branch(eq_L);
+        if (equal(eq_L->value.dbl, 0.0))
+            keep_const(0.0);
+        break;
+    case OP_POW:
+        if (equal(eq_R->value.dbl, 1.0))
+            keep_branch(eq_L);
+        if (equal(eq_L->value.dbl, 0.0))
+            keep_const(1.0);
+        break;
+    case OP_COS:
+    case OP_SIN:
+    case OP_NONE:
+    default: return;
     }
 }
