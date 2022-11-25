@@ -24,6 +24,7 @@
 
 #include "lib/bin_tree.h"
 #include "lib/grammar.h"
+#include "utils/artigen.h"
 
 #include "utils/main_utils.h"
 
@@ -55,6 +56,8 @@ int main(const int argc, const char** argv) {
     char* source_equation = read_whole(f_name);
     caret_t source_caret = source_equation;
 
+    srand((unsigned int)get_simple_hash(source_equation, source_equation + strlen(source_equation)));
+
     Equation* equation = parse((const char**)&source_caret);
     track_allocation(equation, Equation_dtor);
 
@@ -64,27 +67,10 @@ int main(const int argc, const char** argv) {
 
     Equation_dump(equation, ABSOLUTE_IMPORTANCE);
 
-    char output[MAX_FORMULA_LENGTH] = "";
-    caret_t caret = output;
-    
-    Equation_write_as_tex(equation, &caret, &errno);
+    Article article = {};
+    Article_ctor(&article, "./");
 
-    printf("\\[f(x) = %s\\]\n", output);
-
-    for (int power = 1; power < 4; ++power) {
-        memset(output, 0, sizeof(output));
-
-        Equation* deriv = Equation_diff(equation, 'x');
-        Equation_simplify(deriv);
-        Equation_dtor(&equation);
-        equation = deriv;
-
-        caret = output;
-
-        Equation_write_as_tex(equation, &caret, &errno);
-
-        printf("\\[f^{(%d)}(x) = %s\\]\n", power, output);
-    }
+    differentiate(&article, equation, 10);
 
     return_clean(errno == 0 ? EXIT_SUCCESS : EXIT_FAILURE);
 }
