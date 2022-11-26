@@ -38,9 +38,10 @@ enum Operator {
     OP_SIN,
     OP_COS,
     OP_POW,
+    OP_LN,
 };
 
-//* Operators text representation.
+//* Operator text representation.
 static const char* OP_TEXT_REPS[] = {
     "NONE",
     "+",
@@ -50,13 +51,14 @@ static const char* OP_TEXT_REPS[] = {
     "sin",
     "cos",
     "^",
+    "ln"
 };
 
 //* Number of operation types.
 static const size_t OP_TYPE_COUNT = sizeof(OP_TEXT_REPS) / sizeof(*OP_TEXT_REPS);
 
 //* Operation priority list.
-static const int OP_PRIORITY[OP_TYPE_COUNT] = {
+static const int OP_PRIORITY[] = {
     -1, // <-- NONE
     0,  // <-- +
     0,  // <-- -
@@ -65,6 +67,7 @@ static const int OP_PRIORITY[OP_TYPE_COUNT] = {
     2,  // <-- sin
     2,  // <-- cos
     3,  // <-- pow (^)
+    2,  // <-- ln
 };
 
 #endif

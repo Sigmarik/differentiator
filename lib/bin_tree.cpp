@@ -150,7 +150,7 @@ void Equation_write_as_tex(const Equation* equation, caret_t* caret, int* const 
             surround("(", { Equation_write_as_tex(equation->left, caret); }, ")",
                 equation->left->type == TYPE_OP && OP_PRIORITY[equation->left->value.op] < OP_PRIORITY[equation->value.op]);
 
-            if (equation->left->type == TYPE_CONST && equation->right->type == TYPE_CONST)
+            if (equation->right->type == TYPE_CONST)
                 caret_printf(caret, "\\cdot");
 
             surround("(", { Equation_write_as_tex(equation->right, caret); }, ")",
@@ -160,6 +160,7 @@ void Equation_write_as_tex(const Equation* equation, caret_t* caret, int* const 
 
         case OP_SIN:
         case OP_COS:
+        case OP_LN:
             caret_printf(caret, "\\%s", OP_TEXT_REPS[equation->value.op]);
             surround("(", { Equation_write_as_tex(equation->right, caret); }, ")", true);
             break;
@@ -231,6 +232,7 @@ Equation* Equation_copy(const Equation* equation) {
 #define eq_sin(arg) eq_op(OP_SIN, eq_const(0),  arg)
 #define eq_cos(arg) eq_op(OP_COS, eq_const(0),  arg)
 #define eq_neg(arg) eq_op(OP_MUL, eq_const(-1), arg)
+#define eq_ln(arg)  eq_op(OP_LN,  eq_const(0),  arg)
 
 Equation* Equation_diff(const Equation* equation, const uintptr_t var_id) {
     if (!equation) return NULL;
@@ -250,9 +252,9 @@ Equation* Equation_diff(const Equation* equation, const uintptr_t var_id) {
         case OP_DIV: return eq_div(eq_sub(eq_mul(eq_dL, eq_cR), eq_mul(eq_cL, eq_dR)), eq_pow(eq_cR, eq_const(2)));
         case OP_SIN: return eq_mul(eq_cos(eq_cR), eq_dR);
         case OP_COS: return eq_mul(eq_neg(eq_sin(eq_cR)), eq_dR);
-        case OP_POW:
-            log_printf(ERROR_REPORTS, "error", "POW derivatives are not supported yet. Sorry.\n");
-            return Equation_copy(equation);
+        case OP_POW: return eq_mul(eq_pow(eq_cL, eq_sub(eq_cR, eq_const(1))),
+                                   eq_add( eq_mul(eq_cR, eq_dL),  eq_mul(eq_mul(eq_cL, eq_dR), eq_ln(eq_cL)) ));
+        case OP_LN:  return eq_div(eq_dR, eq_cR);
         case OP_NONE:
             log_printf(ERROR_REPORTS, "error", "NONE operation detected when differentiating equation %p.\n", equation);
             return Equation_copy(equation);
@@ -295,7 +297,7 @@ void Equation_simplify(Equation* equation, int* const err_code) {
 }
 
 void recursive_graph_dump(const Equation* equation, FILE* file, int* const err_code) {
-    _LOG_FAIL_CHECK_(!BinaryTree_status(equation), "error", ERROR_REPORTS, return, err_code, EINVAL);
+    _LOG_FAIL_CHECK_(!(BinaryTree_status(equation) & (~TREE_INV_CONNECTIONS)), "error", ERROR_REPORTS, return, err_code, EINVAL);
     _LOG_FAIL_CHECK_(file, "error", ERROR_REPORTS, return, err_code, ENOENT);
 
     if (!equation || !file) return;
@@ -342,6 +344,13 @@ static void collapse(Equation* equation) {
     case OP_POW:
         eq_value = pow(get_value(eq_L), get_value(eq_R));
         break;
+    case OP_LN:
+        if (equal(get_value(eq_R), 1.0)) {
+            eq_value = 0.0;
+            break;
+        } else {
+            return;
+        }
     case OP_SIN:
     case OP_COS:
     case OP_NONE:
@@ -354,16 +363,17 @@ static void collapse(Equation* equation) {
     Equation_dtor(&equation->right);
 }
 
-#define keep_branch(branch) do {        \
-    if (eq_L == branch)                 \
-        Equation_dtor(&eq_R);           \
-    else                                \
-        Equation_dtor(&eq_L);           \
-    equation->type  = branch->type;     \
-    equation->left  = branch->left;     \
-    equation->right = branch->right;    \
-    equation->value = branch->value;    \
-    free(branch);                       \
+#define keep_branch(branch) do {            \
+    Equation* _branch_copy = branch;        \
+    if (eq_R != branch)                     \
+        Equation_dtor(&eq_R);               \
+    else if (eq_L != branch)                \
+        Equation_dtor(&eq_L);               \
+    equation->type  = _branch_copy->type;   \
+    equation->left  = _branch_copy->left;   \
+    equation->right = _branch_copy->right;  \
+    equation->value = _branch_copy->value;  \
+    free(_branch_copy);                     \
 } while (0)
 
 #define keep_const(const_value) do {    \
@@ -395,15 +405,20 @@ static void rm_useless(Equation* equation) {
     case OP_DIV:
         if (equal(eq_R->value.dbl, 1.0))
             keep_branch(eq_L);
-        if (equal(eq_L->value.dbl, 0.0))
+        else if (equal(eq_L->value.dbl, 0.0))
             keep_const(0.0);
         break;
     case OP_POW:
-        if (equal(eq_R->value.dbl, 1.0))
+        if (eq_R->type == TYPE_CONST && equal(eq_R->value.dbl, 1.0))
             keep_branch(eq_L);
-        if (equal(eq_L->value.dbl, 0.0))
+        else if (eq_R->type == TYPE_CONST && equal(eq_R->value.dbl, 0.0))
             keep_const(1.0);
+        else if (eq_L->type == TYPE_CONST && equal(eq_L->value.dbl, 1.0)) 
+            keep_const(1.0);
+        else if (eq_L->type == TYPE_CONST && equal(eq_L->value.dbl, 0.0))
+            keep_const(0.0);
         break;
+    case OP_LN:
     case OP_COS:
     case OP_SIN:
     case OP_NONE:

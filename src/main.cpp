@@ -70,7 +70,7 @@ int main(const int argc, const char** argv) {
     Article article = {};
     Article_ctor(&article, "./");
 
-    differentiate(&article, equation, 10);
+    differentiate(&article, equation, 3);
 
     return_clean(errno == 0 ? EXIT_SUCCESS : EXIT_FAILURE);
 }
