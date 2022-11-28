@@ -13,6 +13,16 @@
 
 #define equal(alpha, beta) ( abs(alpha - beta) < CMP_EPS )
 
+#define OP_SWITCH_END case OP_NONE:                                                                                     \
+        if (err_code) *err_code = EINVAL;                                                                               \
+        log_printf(ERROR_REPORTS, "error", "NONE operation detected when differentiating equation %p.\n", equation);    \
+        break;                                                                                                          \
+    default:                                                                                                            \
+        if (err_code) *err_code = EINVAL;                                                                               \
+        log_printf(ERROR_REPORTS, "error",                                                                              \
+            "Somehow Operation equation->value.op had an incorrect value of %d.\n", equation->value.op);                \
+        break;                                                                                                          \
+
 /**
  * @brief Print subtree to the .dot file.
  * 
@@ -20,7 +30,7 @@
  * @param file write destination
  * @param err_code variable to use as errno
  */
-static void recursive_graph_dump(const Equation* equation, FILE* file, int* const err_code = NULL);
+static void recursive_graph_dump(const Equation* equation, FILE* file, int* const err_code = &errno);
 
 /**
  * @brief Collapse the equation to constant.
@@ -176,15 +186,7 @@ void Equation_write_as_tex(const Equation* equation, caret_t* caret, int* const 
                 equation->right->type == TYPE_OP && OP_PRIORITY[equation->right->value.op] < OP_PRIORITY[equation->value.op]);
             
             break;
-        case OP_NONE:
-            log_printf(ERROR_REPORTS, "error", "Encountered OP_NONE while processing node %p.\n", equation);
-            if (err_code) *err_code = EINVAL;
-            break;
-        default:
-            log_printf(ERROR_REPORTS, "error", "Encountered unknown operation of %d while processing node %p.\n",
-                equation->value.op, equation);
-            if (err_code) *err_code = EINVAL;
-            break;
+        OP_SWITCH_END
         }
 
         break;
@@ -234,7 +236,7 @@ Equation* Equation_copy(const Equation* equation) {
 #define eq_neg(arg) eq_op(OP_MUL, eq_const(-1), arg)
 #define eq_ln(arg)  eq_op(OP_LN,  eq_const(0),  arg)
 
-Equation* Equation_diff(const Equation* equation, const uintptr_t var_id) {
+Equation* Equation_diff(const Equation* equation, const uintptr_t var_id, int* const err_code) {
     if (!equation) return NULL;
     switch (equation->type) {
     case TYPE_VAR:
@@ -255,13 +257,7 @@ Equation* Equation_diff(const Equation* equation, const uintptr_t var_id) {
         case OP_POW: return eq_mul(eq_pow(eq_cL, eq_sub(eq_cR, eq_const(1))),
                                    eq_add( eq_mul(eq_cR, eq_dL),  eq_mul(eq_mul(eq_cL, eq_dR), eq_ln(eq_cL)) ));
         case OP_LN:  return eq_div(eq_dR, eq_cR);
-        case OP_NONE:
-            log_printf(ERROR_REPORTS, "error", "NONE operation detected when differentiating equation %p.\n", equation);
-            return Equation_copy(equation);
-        default:
-            log_printf(ERROR_REPORTS, "error", 
-                "Somehow Operation equation->value.op had an incorrect value of %d.\n", equation->value.op);
-            break;
+        OP_SWITCH_END
         }
         break;
 
@@ -294,6 +290,42 @@ void Equation_simplify(Equation* equation, int* const err_code) {
     collapse(equation);
 
     rm_useless(equation);
+}
+
+double Equation_calculate(const Equation* equation, const double x_value, int* const err_code) {
+    if (!equation) return 0.0;
+
+    switch (equation->type) {
+
+    case TYPE_CONST: return equation->value.dbl;
+    case TYPE_VAR: return equation->value.id == 'x' ? 0.0 : x_value;
+
+    case TYPE_OP: {
+        double alpha = Equation_calculate(equation->left, x_value);
+        double beta  = Equation_calculate(equation->right, x_value);
+
+        switch (equation->value.op) {
+
+        case OP_ADD: return alpha + beta;
+        case OP_SUB: return alpha - beta;
+        case OP_MUL: return alpha * beta;
+        case OP_DIV:
+            _LOG_FAIL_CHECK_(!equal(beta, 0.0), "error", ERROR_REPORTS, return INFINITY, err_code, EINVAL);
+            return alpha / beta;
+        case OP_COS: return cos(beta);
+        case OP_SIN: return sin(beta);
+        case OP_POW: return pow(alpha, beta);
+        case OP_LN:  return log(beta);
+        OP_SWITCH_END
+
+        }
+
+        break;
+    }
+    default: break;
+    }
+
+    return 0.0;
 }
 
 void recursive_graph_dump(const Equation* equation, FILE* file, int* const err_code) {

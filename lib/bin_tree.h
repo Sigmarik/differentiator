@@ -15,6 +15,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdint.h>
+#include <errno.h>
 
 #include "tree_config.h"
 #include "bin_tree_reports.h"
@@ -34,7 +35,7 @@ struct Equation {
     Equation* right = NULL;
 };
 
-Equation* new_Equation(NodeType type, NodeValue value, Equation* left, Equation* right, int* const err_code = NULL);
+Equation* new_Equation(NodeType type, NodeValue value, Equation* left, Equation* right, int* const err_code = &errno);
 void Equation_dtor(Equation** node);
 
 /**
@@ -63,7 +64,7 @@ void _Equation_dump_graph(const Equation* equation, unsigned int importance);
  * @param caret write destination
  * @param err_code variable to use as errno
  */
-void Equation_write_as_tex(const Equation* equation, caret_t* caret, int* const err_code = NULL);
+void Equation_write_as_tex(const Equation* equation, caret_t* caret, int* const err_code = &errno);
 
 /**
  * @brief Get status of the equation.
@@ -88,13 +89,22 @@ Equation* Equation_copy(const Equation* equation);
  * @param var_id ID of the variable to differentiate from
  * @return pointer to the differentiated equation
  */
-Equation* Equation_diff(const Equation* equation, const uintptr_t var_id);
+Equation* Equation_diff(const Equation* equation, const uintptr_t var_id, int* const err_code = &errno);
 
 /**
  * @brief Simplify the equation (collapse constants, remove trivial operations).
  * 
  * @param equation 
  */
-void Equation_simplify(Equation* equation, int* const err_code = NULL);
+void Equation_simplify(Equation* equation, int* const err_code = &errno);
+
+/**
+ * @brief Get expression value at the point X = x_value
+ * 
+ * @param equation
+ * @param x_value value of the X parameter
+ * @param err_code variable to use as errno
+ */
+double Equation_calculate(const Equation* equation, const double x_value, int* const err_code = &errno);
 
 #endif

@@ -30,6 +30,4 @@ void as_series(Article* article, const Equation* equation, double point, unsigne
 
 void tangent(Article* article, const Equation* equation, double point);
 
-void end(Article* article);
-
 #endif
