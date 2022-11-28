@@ -22,6 +22,7 @@ static const size_t MAX_NAME_LENGTH = 1024;
 #define DEFAULT_DB_NAME "simple.math"
 #define DEFAULT_ART_FOLDER "article/"
 #define ART_MAIN_NAME "main.tex"
+#define ART_CONTENT_NAME "content.tex"
 #define ART_ASSET_FOLD_NAME "assets"
 
 static const char* TRANSITION_PHRASES[] = {

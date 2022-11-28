@@ -1,6 +1,7 @@
 #include "grammar.h"
 
 #include <ctype.h>
+#include <cstring>
 
 #include "util/dbg/debug.h"
 
@@ -14,36 +15,43 @@
     log_printf(ERROR_REPORTS, "error", __VA_ARGS__);    \
     return value;                                       \
 }while (0)
-#define SKIP() skip_spaces(caret)
 
 /**
- * @brief Move the caret to the nearest non-space character.
+ * @brief Rebuild the line skipping all blank characters.
  * 
- * @param caret
+ * @param begin 
  */
-static void skip_spaces(const char* *caret);
+static void erase_spaces(char* line);
 
 GRAM(parse) {
     CHECK_INPUT();
-    SKIP();
-    Equation* value = parse_eq(caret);
-    SKIP();
-    if (**caret != '\0')
-        CERROR("Invalid terminator symbol of 0x%02X detected.\n", (unsigned char)**caret & 0xff);
+    char* buffer = (char*) calloc(strlen(*caret) + 1, sizeof(**caret));
+    strcpy(buffer, *caret);
+    erase_spaces(buffer);
+    caret_t buf_caret = buffer;
+    log_printf(STATUS_REPORTS, "status", "Equation after space removing procedure: %s\n", buf_caret);
+    Equation* value = parse_eq((const char**)&buf_caret);
+    if (*buf_caret != '\0') {
+        free(buffer);
+        CERROR("Invalid terminator symbol of 0x%02X detected.\n", (unsigned char)*buf_caret & 0xff);
+    }
+    *caret += buf_caret - buffer;
+
+    free(buffer);
+    buffer = NULL;
+    buf_caret = NULL;
+
     return value;
 }
 
 GRAM(parse_eq) {
     CHECK_INPUT();
     Equation* value = parse_mult(caret);
-    SKIP();
     while (**caret == '+' || **caret == '-') {
         char op = **caret;
         ++*caret;
-        SKIP();
         Equation* next_arg = parse_mult(caret);
         value = new_Equation(TYPE_OP, { .op = op=='+' ? OP_ADD : OP_SUB }, value, next_arg);
-        SKIP();
     }
     return value;
 }
@@ -51,7 +59,6 @@ GRAM(parse_eq) {
 GRAM(parse_mult) {
     CHECK_INPUT();
     Equation* value = parse_pow(caret);
-    SKIP();
     while (**caret == '*' || **caret == '/') {
         char op = **caret;
         ++*caret;
@@ -64,12 +71,11 @@ GRAM(parse_mult) {
 GRAM(parse_pow) {
     CHECK_INPUT();
     Equation* value = parse_brackets(caret);
-    SKIP();
+    
     while (**caret == '^') {
         ++*caret;
         Equation* next_arg = parse_brackets(caret);
         value = new_Equation(TYPE_OP, { .op = OP_POW }, value, next_arg);
-        SKIP();
     }
     return value;
 }
@@ -77,11 +83,9 @@ GRAM(parse_pow) {
 GRAM(parse_brackets) {
     CHECK_INPUT();
     Equation* value = NULL;
-    SKIP();
     if (**caret == '(') {
         ++*caret;
         value = parse_eq(caret);
-        SKIP();
         if (**caret != ')') CERROR("Closing bracket expected, got %c instead.\n", **caret);
         ++*caret;
     } else {
@@ -93,7 +97,6 @@ GRAM(parse_brackets) {
 GRAM(parse_number) {
     CHECK_INPUT();
     Equation* value = NULL;
-    SKIP();
     if (isdigit(**caret)) {
         value = new_Equation(TYPE_CONST, { .dbl = 0.0 }, NULL, NULL);
         int length = 0;
@@ -106,6 +109,12 @@ GRAM(parse_number) {
     return value;
 }
 
-static void skip_spaces(const char* *caret) {
-    while (isblank(**caret)) ++*caret;
+static void erase_spaces(char* line) {
+    char* left = line;
+    for (char* right = line; *right; ++right) {
+        if (isblank(*right)) continue;
+        *left = *right;
+        ++left;
+    }
+    *left = '\0';
 }

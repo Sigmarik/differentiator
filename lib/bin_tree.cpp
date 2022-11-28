@@ -298,7 +298,7 @@ double Equation_calculate(const Equation* equation, const double x_value, int* c
     switch (equation->type) {
 
     case TYPE_CONST: return equation->value.dbl;
-    case TYPE_VAR: return equation->value.id == 'x' ? 0.0 : x_value;
+    case TYPE_VAR: return equation->value.id == 'x' ? x_value : 0.0;
 
     case TYPE_OP: {
         double alpha = Equation_calculate(equation->left, x_value);

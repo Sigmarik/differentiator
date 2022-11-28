@@ -63,9 +63,8 @@ int main(const int argc, const char** argv) {
 
     free(source_equation);
 
-    _LOG_FAIL_CHECK_(!BinaryTree_status(equation), "error", ERROR_REPORTS, return_clean(EXIT_FAILURE), NULL, 0);
-
     Equation_dump(equation, ABSOLUTE_IMPORTANCE);
+    _LOG_FAIL_CHECK_(!BinaryTree_status(equation), "error", ERROR_REPORTS, return_clean(EXIT_FAILURE), &errno, EAGAIN);
 
     Article article = {};
     Article_ctor(&article, "./");
@@ -73,6 +72,8 @@ int main(const int argc, const char** argv) {
     differentiate(&article, equation, 2);
 
     as_series(&article, equation, 0, 4);
+
+    tangent(&article, equation, 1);
 
     return_clean(errno == 0 ? EXIT_SUCCESS : EXIT_FAILURE);
 }

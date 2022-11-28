@@ -188,8 +188,21 @@ void tangent(Article* article, const Equation* equation, double point) {
 
     double value = Equation_calculate(equation, point);
     Equation* deriv = Equation_diff(equation, 'x');
+    Equation_simplify(deriv);
     double slope_k = Equation_calculate(deriv, point);
     fill_with(equation);
+    put("To find the tangent, first we need to calculate first derivative of the equation at point $x=%lg$.\n", point);
+    put("\\[(%s)'=", formula_buffer);
+    fill_with(deriv);
+    put("=%s=%lg\\]\n", formula_buffer, slope_k);
+    if (isinf(slope_k)) {
+        put("As we can see, derivative at this point is reaching infinity, "
+            "meaning, that tangent at this point is a vertical line $x=%lg$", point);
+    }
+    double constant = value - slope_k * point;
+    put("Using this data we can assume that the tangent at given point is $y=%lgx%+lg$", slope_k, constant);
+
+    Equation_dtor(&deriv);
 }
 
 static void put_transition(Article* article) {
