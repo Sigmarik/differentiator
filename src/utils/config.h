@@ -19,11 +19,21 @@ static const int NUMBER_OF_OWLS = 10;
 static const size_t MAX_FORMULA_LENGTH = 1024;
 
 static const size_t MAX_NAME_LENGTH = 1024;
-#define DEFAULT_DB_NAME "simple.math"
-#define DEFAULT_ART_FOLDER "article/"
-#define ART_MAIN_NAME "main.tex"
-#define ART_CONTENT_NAME "content.tex"
-#define ART_ASSET_FOLD_NAME "assets"
+static const char DEFAULT_DB_NAME[] = "simple.math";
+static const char DEFAULT_ART_FOLDER[] = "article/";
+static const char ART_MAIN_NAME[] = "main.tex";
+static const char ART_CONTENT_NAME[] = "content.tex";
+static const char ART_ASSET_FOLD_NAME[] = "assets";
+
+static const char ARTICLE_PREFIX[] = "\\documentclass{article}\n\n"
+"\\usepackage[utf8]{inputenc}\n"
+"\\usepackage{tikz}\n"
+"\\usepackage{pgfplots}\n\n"
+"\\title{Generated Article}\n\n"
+"\\begin{document}\n\n"
+"\\maketitle\n\n";
+
+static const char ARTICLE_POSTFIX[] = "\n\n\\end{document}\n";
 
 static const char* TRANSITION_PHRASES[] = {
     "This is not a big deal to assume that\n",

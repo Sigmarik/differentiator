@@ -48,11 +48,15 @@ void Article_ctor(Article* article, const char* dest_folder) {
     article->folder_name = dest_folder;
     article->file = fopen(full_file_name, "w");
 
+    fprintf(article->file, "%s", ARTICLE_PREFIX);
+
     _LOG_FAIL_CHECK_(article->file, "error", ERROR_REPORTS, return, &errno, ENOENT);
 }
 
 void Article_dtor(Article* article) {
     _LOG_FAIL_CHECK_(Article_status(article), "error", ERROR_REPORTS, return, &errno, EINVAL);
+
+    fprintf(article->file, "%s", ARTICLE_POSTFIX);
 
     fclose(article->file);
     article->file =  NULL;
@@ -89,7 +93,7 @@ void differentiate(Article* article, const Equation* equation, unsigned int powe
 
     if (cur_power > 0) {
         fill_with(equation);
-        put("We have already proved the statement\n\\[(%s)^{(%ld)}=", formula_buffer, (long int)cur_power);
+        put("We have already proven the statement\n\\[(%s)^{(%ld)}=", formula_buffer, (long int)cur_power);
 
         fill_with(current_stage);
         put("%s\\]\n", formula_buffer);
@@ -130,7 +134,7 @@ void as_series(Article* article, const Equation* equation, double point, unsigne
     put("Let's first calculate equation derivatives.\\newline\n");
     differentiate(article, equation, power);
 
-    put("Then we can just place values to previously calculated derivatives and paste them inside the series formula.\n");
+    put("Then we can just place values to previously calculated derivatives and paste them to the series formula.\n");
 
     fill_with(equation);
     put("\\[%s=", formula_buffer);
@@ -198,9 +202,10 @@ void tangent(Article* article, const Equation* equation, double point) {
     if (isinf(slope_k)) {
         put("As we can see, derivative at this point is reaching infinity, "
             "meaning, that tangent at this point is a vertical line $x=%lg$", point);
+    } else {
+        double constant = value - slope_k * point;
+        put("Using this data we can assume that the tangent at given point is $y=%lgx%+lg$", slope_k, constant);
     }
-    double constant = value - slope_k * point;
-    put("Using this data we can assume that the tangent at given point is $y=%lgx%+lg$", slope_k, constant);
 
     Equation_dtor(&deriv);
 }

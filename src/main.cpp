@@ -68,6 +68,7 @@ int main(const int argc, const char** argv) {
 
     Article article = {};
     Article_ctor(&article, "./");
+    track_allocation(article, Article_dtor);
 
     differentiate(&article, equation, 2);
 
