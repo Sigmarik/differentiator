@@ -80,6 +80,9 @@ bool Article_status(Article* article) {
 #define put(...) fprintf(article->file, __VA_ARGS__)
 
 void differentiate(Article* article, const Equation* equation, unsigned int power) {
+    _LOG_FAIL_CHECK_(Article_status(article), "error", ERROR_REPORTS, return, &errno, EINVAL);
+    _LOG_FAIL_CHECK_(!BinaryTree_status(equation), "error", ERROR_REPORTS, return, &errno, EINVAL);
+
     Equation* current_stage = Equation_copy(equation);
     unsigned int cur_power = 0;
 
@@ -129,6 +132,9 @@ void differentiate(Article* article, const Equation* equation, unsigned int powe
 }
 
 void as_series(Article* article, const Equation* equation, double point, unsigned int power) {
+    _LOG_FAIL_CHECK_(Article_status(article), "error", ERROR_REPORTS, return, &errno, EINVAL);
+    _LOG_FAIL_CHECK_(!BinaryTree_status(equation), "error", ERROR_REPORTS, return, &errno, EINVAL);
+
     init_buffer();
 
     put("Let's first calculate equation derivatives.\\newline\n");
@@ -188,6 +194,9 @@ void as_series(Article* article, const Equation* equation, double point, unsigne
 }
 
 void tangent(Article* article, const Equation* equation, double point) {
+    _LOG_FAIL_CHECK_(Article_status(article), "error", ERROR_REPORTS, return, &errno, EINVAL);
+    _LOG_FAIL_CHECK_(!BinaryTree_status(equation), "error", ERROR_REPORTS, return, &errno, EINVAL);
+
     init_buffer();
 
     double value = Equation_calculate(equation, point);
@@ -215,6 +224,8 @@ static void put_transition(Article* article) {
 }
 
 void to_derivative(Equation** equation) {
+    _LOG_FAIL_CHECK_(!BinaryTree_status(*equation), "error", ERROR_REPORTS, return, &errno, EINVAL);
+
     Equation* next_stage = Equation_diff(*equation, 'x');
     Equation_dtor(equation);
     *equation = next_stage;
