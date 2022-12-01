@@ -72,4 +72,13 @@ void edit_int(const int argc, void** argv, const char* argument);
  */
 void edit_string(const int argc, void** argv, const char* argument);
 
+/**
+ * @brief Set double value (first pointer) to parsed value of argument.
+ * 
+ * @param argc number of arguments
+ * @param argv pointers to arguments (1-st element should be double*)
+ * @param argument argument as string
+ */
+void edit_double(const int argc, void** argv, const char* argument);
+
 #endif

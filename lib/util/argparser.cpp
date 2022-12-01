@@ -61,6 +61,11 @@ void edit_string(const int argc, void** argv, const char* argument) {
     strcpy(*(char**)argv, argument);
 }
 
+void edit_double(const int argc, void** argv, const char* argument) {
+    SILENCE_UNUSED(argc);
+    *(double*)argv[0] = atof(argument);
+}
+
 void print_description(const ActionTag& tag) {
     if (*tag.name.long_name)
         printf("-%c --%s - %s\n\n", tag.name.short_name, tag.name.long_name, tag.description);

@@ -203,7 +203,7 @@ void describe_tangent(ArticleProject* article, const Equation* equation, double 
     PUT("\\[(%s)'=", formula_buffer);
 
     FILL_PRINT_BUFFER(deriv);
-    PUT("=%s=%lg\\]\n", formula_buffer, slope_k);
+    PUT("%s=%lg\\]\n", formula_buffer, slope_k);
 
     if (isinf(slope_k)) {
         PUT("As we can see, derivative at this point is reaching infinity, "

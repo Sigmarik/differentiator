@@ -82,3 +82,7 @@ const char* get_output_file_name(const int argc, const char** argv, const char* 
 
     return default_name;
 }
+
+int max(int alpha, int beta) {
+    return alpha > beta ? alpha : beta;
+}

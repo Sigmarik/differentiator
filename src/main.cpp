@@ -30,13 +30,21 @@
 
 #define MAIN
 
+#define MAKE_WRAPPER(name) void* __wrapper_##name[] = {&name}
+
 int main(const int argc, const char** argv) {
     atexit(log_end_program);
 
     start_local_tracking();
 
     unsigned int log_threshold = STATUS_REPORTS;
-    void* log_threshold_wrapper[] = { &log_threshold };
+    MAKE_WRAPPER(log_threshold);
+    int differentiation_power = 2;
+    MAKE_WRAPPER(differentiation_power);
+    int series_power = 5;
+    MAKE_WRAPPER(series_power);
+    double series_point = 0.0;
+    MAKE_WRAPPER(series_point);
 
     ActionTag line_tags[] = {
         #include "cmd_flags/main_flags.h"
@@ -75,11 +83,11 @@ int main(const int argc, const char** argv) {
     Article_ctor(&article, "./");
     track_allocation(article, Article_dtor);
 
-    describe_differentiation(&article, equation, 2);
+    describe_differentiation(&article, equation, (unsigned int)max(0, differentiation_power));
 
-    describe_series(&article, equation, 0, 4);
+    describe_series(&article, equation, series_point, (unsigned int)max(0, series_power));
 
-    describe_tangent(&article, equation, 1);
+    describe_tangent(&article, equation, series_point);
 
     return_clean(errno == 0 ? EXIT_SUCCESS : EXIT_FAILURE);
 }

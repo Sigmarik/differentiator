@@ -94,6 +94,15 @@ const char* get_input_file_name(const int argc, const char** argv, const char* d
 const char* get_output_file_name(const int argc, const char** argv, const char* default_name);
 
 /**
+ * @brief Get maximum of two values.
+ * 
+ * @param alpha 
+ * @param beta 
+ * @return maximum of alpha and beta
+ */
+int max(int alpha, int beta);
+
+/**
  * @brief Read user input and do actions depending on if user entered yes or no.
  * 
  * @param action_yes code to execute on YES
