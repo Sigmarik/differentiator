@@ -14,20 +14,29 @@
 
 #include "lib/bin_tree.h"
 
-struct Article {
+struct ArticleStorage {
     const char* folder_name = NULL;
     FILE* file = NULL;
-    unsigned int max_dif_power = 0;  // maximal derivative power mentioned in the article
 };
 
-void Article_ctor(Article* article, const char* dest_folder);
-void Article_dtor(Article* article);
-bool Article_status(Article* article);
+struct ArticleInfo {
+    unsigned int max_dif_power = 0;
+};
 
-void differentiate(Article* article, const Equation* equation, unsigned int power);
+struct ArticleProject {
+    ArticleStorage storage = {};
 
-void as_series(Article* article, const Equation* equation, double point, unsigned int power);
+    ArticleInfo info = {};
+};
 
-void tangent(Article* article, const Equation* equation, double point);
+void Article_ctor(ArticleProject* article, const char* dest_folder);
+void Article_dtor(ArticleProject* article);
+bool Article_is_fine(ArticleProject* article);
+
+void describe_differentiation(ArticleProject* article, const Equation* equation, unsigned int power);
+
+void describe_series(ArticleProject* article, const Equation* equation, double point, unsigned int power);
+
+void describe_tangent(ArticleProject* article, const Equation* equation, double point);
 
 #endif

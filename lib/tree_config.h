@@ -21,8 +21,6 @@ static const size_t TREE_DRAW_REQUEST_SIZE = 512;
 #define TREE_LOG_ASSET_FOLD_NAME "log_assets"
 #define TREE_DUMP_TAG "tree_dump"
 
-static const double CMP_EPS = 1e-7;
-
 enum NodeType {
     TYPE_OP,
     TYPE_VAR,
@@ -30,7 +28,6 @@ enum NodeType {
 };
 
 enum Operator {
-    OP_NONE = 0,
     OP_ADD,
     OP_SUB,
     OP_MUL,
@@ -43,7 +40,6 @@ enum Operator {
 
 //* Operator text representation.
 static const char* OP_TEXT_REPS[] = {
-    "NONE",
     "+",
     "-",
     "*",
@@ -59,7 +55,6 @@ static const size_t OP_TYPE_COUNT = sizeof(OP_TEXT_REPS) / sizeof(*OP_TEXT_REPS)
 
 //* Operation priority list.
 static const int OP_PRIORITY[] = {
-    -1, // <-- NONE
     0,  // <-- +
     0,  // <-- -
     1,  // <-- *

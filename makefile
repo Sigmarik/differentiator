@@ -35,7 +35,7 @@ BLD_FULL_NAME = $(BLD_NAME)_v$(BLD_VERSION)_$(BLD_TYPE)_$(BLD_PLATFORM)$(BLD_FOR
 
 all: asset main
 
-LIB_OBJECTS = argparser.o logger.o debug.o alloc_tracker.o file_helper.o bin_tree.o speaker.o grammar.o
+LIB_OBJECTS = argparser.o logger.o debug.o alloc_tracker.o file_helper.o bin_tree.o speaker.o grammar.o util.o
 
 MAIN_OBJECTS = main.o main_utils.o artigen.o $(LIB_OBJECTS)
 main: $(MAIN_OBJECTS)
@@ -85,6 +85,9 @@ speaker.o:
 
 grammar.o:
 	$(CC) $(CFLAGS) -c lib/grammar.cpp
+
+util.o:
+	$(CC) $(CFLAGS) -c lib/util/util.cpp
 
 clean:
 	rm -rf *.o

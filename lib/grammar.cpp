@@ -5,77 +5,146 @@
 
 #include "util/dbg/debug.h"
 
-#define GRAM(name) Equation* name(const char* *caret)
-#define CHECK_INPUT() do {                                                      \
-    _LOG_FAIL_CHECK_(caret, "error", ERROR_REPORTS, return NULL, NULL, EINVAL); \
-    _LOG_FAIL_CHECK_(*caret, "error", ERROR_REPORTS, return NULL, NULL, EINVAL);\
+#define GRAM(name) Equation* name(const LexStack stack, int* caret)
+#define CHECK_INPUT() do {                                                                          \
+    _LOG_FAIL_CHECK_(stack.buffer, "error", ERROR_REPORTS, return NULL, NULL, EINVAL);              \
+    _LOG_FAIL_CHECK_(*caret < (int)stack.size, "error", ERROR_REPORTS, return NULL, NULL, EINVAL);  \
+    log_printf(STATUS_REPORTS, "status", "Called parsing of lexeme at index %d (type: %d).\n",      \
+                                          *caret, (int)stack.buffer[*caret].type);                  \
 }while (0)
-#define CERROR(...) do {                                \
-    printf(__VA_ARGS__);                                \
-    log_printf(ERROR_REPORTS, "error", __VA_ARGS__);    \
-    return value;                                       \
+#define CERROR(...) do {                                                        \
+    log_dup(ERROR_REPORTS, "error", "%-20s\n", stack.buffer[*caret].address);   \
+    log_dup(ERROR_REPORTS, "error", __VA_ARGS__);                               \
+    return value;                                                               \
 }while (0)
 
-/**
- * @brief Rebuild the line skipping all blank characters.
- * 
- * @param begin 
- */
-static void erase_spaces(char* line);
+void LexStack_ctor(LexStack* stack, size_t start_size) {
+    stack->capacity = start_size;
+    stack->buffer = (Lex*) calloc(stack->capacity, sizeof(*stack->buffer));
+}
+
+void LexStack_dtor(LexStack* stack) {
+    free(stack->buffer);
+    stack->capacity = 0;
+    stack->size = 0;
+}
+
+void LexStack_push(LexStack* stack, Lex lexeme) {
+    if (stack->size + 1 >= stack->capacity) {
+        stack->capacity *= 2;
+        Lex* new_buf = (Lex*)calloc(stack->capacity, sizeof(*stack->buffer));
+        _LOG_FAIL_CHECK_(new_buf, "error", ERROR_REPORTS, return, &errno, ENOMEM);
+        memcpy(new_buf, stack->buffer, stack->size * sizeof(*stack->buffer));
+        free(stack->buffer);
+        stack->buffer = new_buf;
+        for (size_t id = stack->size; id < stack->capacity; ++id) {
+            stack->buffer[id] = {};
+        }
+    }
+    stack->buffer[stack->size++] = lexeme;
+    log_printf(STATUS_REPORTS, "status", "Pushed lexeme of type %d {.value = { .ch = %d, .dbl = %lg }} at \"%-10s\" to index %ld.\n",
+               (int) lexeme.type, (int) lexeme.value.ch, lexeme.value.dbl, lexeme.address, (long int)stack->size - 1);
+}
+
+
+LexStack lexify(const char* line) {
+    LexStack stack = {};
+    LexStack_ctor(&stack, 1);
+
+    const char* iter = line;
+
+    for (int shift = 1; *iter != '\n' && *iter != '\0' && *iter != EOF; iter += shift, shift = 1) {
+        char letter = *iter;
+
+        if (isblank(letter)) continue;
+
+        for (size_t id = 0; id < OP_TYPE_COUNT; id++) {
+            if (strncmp(iter, OP_TEXT_REPS[id], strlen(OP_TEXT_REPS[id])))
+                continue;
+            LexStack_push(&stack, { .type = (LexType)id, .address = iter });
+            shift = (int)strlen(OP_TEXT_REPS[id]);
+            break;
+        }
+
+        if (isalpha(letter)) {
+            if (!isalpha(iter[1]))
+                LexStack_push(&stack, { .type = LEX_VAR, .value = { .ch = letter }, .address = iter });
+            else
+                while (isalpha(iter[shift])) ++shift;
+        }
+
+        if (isdigit(letter)) {
+            const char* dbl_end = iter;  // v~~~~ Why the F this function demands non-const pointers?
+            double value = strtod(iter, (char**)&dbl_end);
+            LexStack_push(&stack, { .type = LEX_NUM, .value = { .dbl = value }, .address = iter });
+            shift = (int)(dbl_end - iter);
+        }
+
+        if (letter == '(')
+            LexStack_push(&stack, { .type = LEX_OP_BRACKET, .address = iter });
+        if (letter == ')')
+            LexStack_push(&stack, { .type = LEX_CL_BRACKET, .address = iter });
+    }
+    LexStack_push(&stack, { .type = LEX_OP_TERM, .address = iter });
+
+    return stack;
+}
+
+
+#define ASSIGN_AND_CHECK(variable, value) do {                                      \
+    variable = value;                                                               \
+    _LOG_FAIL_CHECK_(variable, "error", ERROR_REPORTS, return NULL, NULL, EAGAIN);  \
+} while (0);
 
 GRAM(parse) {
-    CHECK_INPUT();
-    char* buffer = (char*) calloc(strlen(*caret) + 1, sizeof(**caret));
-    strcpy(buffer, *caret);
-    erase_spaces(buffer);
-    caret_t buf_caret = buffer;
-    log_printf(STATUS_REPORTS, "status", "Equation after space removing procedure: %s\n", buf_caret);
-    Equation* value = parse_eq((const char**)&buf_caret);
-    if (*buf_caret != '\0') {
-        free(buffer);
-        CERROR("Invalid terminator symbol of 0x%02X detected.\n", (unsigned char)*buf_caret & 0xff);
-    }
-    *caret += buf_caret - buffer;
+    Equation* value = NULL;
+    ASSIGN_AND_CHECK(value, parse_eq(stack, caret));
 
-    free(buffer);
-    buffer = NULL;
-    buf_caret = NULL;
+    if (stack.buffer[*caret].type != LEX_OP_TERM) {
+        CERROR("Redundant lexeme detected after equation parsing has ended.\n");
+    }
 
     return value;
 }
 
 GRAM(parse_eq) {
     CHECK_INPUT();
-    Equation* value = parse_mult(caret);
-    while (**caret == '+' || **caret == '-') {
-        char op = **caret;
+    Equation* value = NULL;
+    ASSIGN_AND_CHECK(value, parse_mult(stack, caret));
+    while (stack.buffer[*caret].type == LEX_PLUS || stack.buffer[*caret].type == LEX_MINUS) {
+        LexType type = stack.buffer[*caret].type;
         ++*caret;
-        Equation* next_arg = parse_mult(caret);
-        value = new_Equation(TYPE_OP, { .op = op=='+' ? OP_ADD : OP_SUB }, value, next_arg);
+        Equation* next_arg = NULL;
+        ASSIGN_AND_CHECK(next_arg, parse_mult(stack, caret));
+        value = Equation_new(TYPE_OP, { .op = type==LEX_PLUS ? OP_ADD : OP_SUB }, value, next_arg);
     }
     return value;
 }
 
 GRAM(parse_mult) {
     CHECK_INPUT();
-    Equation* value = parse_pow(caret);
-    while (**caret == '*' || **caret == '/') {
-        char op = **caret;
+    Equation* value = NULL;
+    ASSIGN_AND_CHECK(value, parse_pow(stack, caret));
+    while (stack.buffer[*caret].type == LEX_MUL || stack.buffer[*caret].type == LEX_DIV) {
+        LexType type = stack.buffer[*caret].type;  // TODO: Too similar to the thing above. Can you fix it?
         ++*caret;
-        Equation* next_arg = parse_pow(caret);
-        value = new_Equation(TYPE_OP, { .op = op=='*' ? OP_MUL : OP_DIV }, value, next_arg);
+        Equation* next_arg = NULL;
+        ASSIGN_AND_CHECK(next_arg, parse_pow(stack, caret));
+        value = Equation_new(TYPE_OP, { .op = type==LEX_MUL ? OP_MUL : OP_DIV }, value, next_arg);
     }
     return value;
 }
 
 GRAM(parse_pow) {
     CHECK_INPUT();
-    Equation* value = parse_brackets(caret);
+    Equation* value = NULL;
+    ASSIGN_AND_CHECK(value, parse_brackets(stack, caret));
     
-    while (**caret == '^') {
+    while (stack.buffer[*caret].type == LEX_POW) {
         ++*caret;
-        Equation* next_arg = parse_brackets(caret);
-        value = new_Equation(TYPE_OP, { .op = OP_POW }, value, next_arg);
+        Equation* next_arg = NULL;
+        ASSIGN_AND_CHECK(next_arg, parse_brackets(stack, caret));
+        value = Equation_new(TYPE_OP, { .op = OP_POW }, value, next_arg);
     }
     return value;
 }
@@ -83,13 +152,13 @@ GRAM(parse_pow) {
 GRAM(parse_brackets) {
     CHECK_INPUT();
     Equation* value = NULL;
-    if (**caret == '(') {
+    if (stack.buffer[*caret].type == LEX_OP_BRACKET) {
         ++*caret;
-        value = parse_eq(caret);
-        if (**caret != ')') CERROR("Closing bracket expected, got %c instead.\n", **caret);
+        ASSIGN_AND_CHECK(value, parse_eq(stack, caret));
+        if (stack.buffer[*caret].type != LEX_CL_BRACKET) CERROR("Expected closing bracket.\n");
         ++*caret;
     } else {
-        value = parse_number(caret);
+        ASSIGN_AND_CHECK(value, parse_number(stack, caret));
     }
     return value;
 }
@@ -97,24 +166,14 @@ GRAM(parse_brackets) {
 GRAM(parse_number) {
     CHECK_INPUT();
     Equation* value = NULL;
-    if (isdigit(**caret)) {
-        value = new_Equation(TYPE_CONST, { .dbl = 0.0 }, NULL, NULL);
-        int length = 0;
-        sscanf(*caret, "%lg%n", &value->value.dbl, &length);
-        *caret += length;
-    } else if (isalpha(**caret)) {
-        value = new_Equation(TYPE_VAR, { .id = (unsigned long)**caret }, NULL, NULL);
+    if (stack.buffer[*caret].type == LEX_NUM) {
+        ASSIGN_AND_CHECK(value, Equation_new(TYPE_CONST, { .dbl = stack.buffer[*caret].value.dbl }, NULL, NULL));
         ++*caret;
+    } else if (stack.buffer[*caret].type == LEX_VAR) {
+        ASSIGN_AND_CHECK(value, Equation_new(TYPE_VAR, { .id = (unsigned long)stack.buffer[*caret].value.ch }, NULL, NULL));
+        ++*caret;
+    } else {
+        CERROR("Expected number or variable, got lexeme of type %d instead.\n", (int)stack.buffer[*caret].type);
     }
     return value;
-}
-
-static void erase_spaces(char* line) {
-    char* left = line;
-    for (char* right = line; *right; ++right) {
-        if (isblank(*right)) continue;
-        *left = *right;
-        ++left;
-    }
-    *left = '\0';
 }

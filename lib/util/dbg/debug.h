@@ -12,7 +12,7 @@
 #ifndef DEBUGGING_H
 #define DEBUGGING_H
 
-#define SILENCE_UNUSED(var) do { (void)(var); } while (0)
+#define SILENCE_UNUSED(var) ((void)(var))
 
 #include <assert.h>
 #include <errno.h>

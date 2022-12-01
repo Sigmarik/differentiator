@@ -28,14 +28,14 @@ union NodeValue {
 };
 
 struct Equation {
-    NodeType type;
-    NodeValue value;
+    NodeType type = {};
+    NodeValue value = { .id = 0 };
 
     Equation* left = NULL;
     Equation* right = NULL;
 };
 
-Equation* new_Equation(NodeType type, NodeValue value, Equation* left, Equation* right, int* const err_code = &errno);
+Equation* Equation_new(NodeType type, NodeValue value, Equation* left, Equation* right, int* const err_code = &errno);
 void Equation_dtor(Equation** node);
 
 /**
@@ -72,7 +72,7 @@ void Equation_write_as_tex(const Equation* equation, caret_t* caret, int* const 
  * @param tree 
  * @return (BinaryTree_status_t) binary tree status (0 = OK)
  */
-BinaryTree_status_t BinaryTree_status(const Equation* equation);
+BinaryTree_status_t Equation_get_error(const Equation* equation);
 
 /**
  * @brief Make a copy of the equation and return pointer to it.

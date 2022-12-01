@@ -41,40 +41,45 @@ int main(const int argc, const char** argv) {
     ActionTag line_tags[] = {
         #include "cmd_flags/main_flags.h"
     };
-    const int number_of_tags = sizeof(line_tags) / sizeof(*line_tags);
+    const int number_of_tags = ARR_SIZE(line_tags);
 
     parse_args(argc, argv, number_of_tags, line_tags);
     log_init("program_log.html", log_threshold, &errno);
     print_label();
 
-    const char* f_name = DEFAULT_DB_NAME;
-    const char* suggested_name = get_input_file_name(argc, argv);
-    if (suggested_name) f_name = suggested_name;
+    const char* f_name = get_input_file_name(argc, argv, DEFAULT_DB_NAME);
 
     log_printf(STATUS_REPORTS, "status", "Opening file %s as the equation source.\n", f_name);
 
     char* source_equation = read_whole(f_name);
-    caret_t source_caret = source_equation;
 
     srand((unsigned int)get_simple_hash(source_equation, source_equation + strlen(source_equation)));
 
-    Equation* equation = parse((const char**)&source_caret);
+    LexStack eq_lex_stack = lexify(source_equation);
+    int lex_caret = 0;
+
+    log_printf(STATUS_REPORTS, "status", "Lexeme stack size = %ld.\n", (long int)eq_lex_stack.size);
+    _log_printf(STATUS_REPORTS, "status", "Lexeme stack capacity = %ld.\n", (long int)eq_lex_stack.capacity);
+
+    Equation* equation = parse(eq_lex_stack, &lex_caret);
     track_allocation(equation, Equation_dtor);
+
+    LexStack_dtor(&eq_lex_stack);
 
     free(source_equation);
 
     Equation_dump(equation, ABSOLUTE_IMPORTANCE);
-    _LOG_FAIL_CHECK_(!BinaryTree_status(equation), "error", ERROR_REPORTS, return_clean(EXIT_FAILURE), &errno, EAGAIN);
+    _LOG_FAIL_CHECK_(!Equation_get_error(equation), "error", ERROR_REPORTS, return_clean(EXIT_FAILURE), &errno, EAGAIN);
 
-    Article article = {};
+    ArticleProject article = {};
     Article_ctor(&article, "./");
     track_allocation(article, Article_dtor);
 
-    differentiate(&article, equation, 2);
+    describe_differentiation(&article, equation, 2);
 
-    as_series(&article, equation, 0, 4);
+    describe_series(&article, equation, 0, 4);
 
-    tangent(&article, equation, 1);
+    describe_tangent(&article, equation, 1);
 
     return_clean(errno == 0 ? EXIT_SUCCESS : EXIT_FAILURE);
 }

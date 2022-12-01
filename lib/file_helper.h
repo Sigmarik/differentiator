@@ -55,6 +55,15 @@ int caret_printf(caret_t* caret, const char* format, ...) __attribute__((format 
 char* read_whole(const char* fname);
 
 /**
+ * @brief Allocate string of required length and print to it.
+ * 
+ * @param format format string
+ * @param ... arguments
+ * @return allocated string with printf result
+ */
+char* dynamic_sprintf(const char* format, ...) __attribute__((format (printf, 1, 2)));
+
+/**
  * @brief (USE ONLY INSIDE exec_on_char STATEMENT) Stop reading symbols and continue execution.
  * 
  */

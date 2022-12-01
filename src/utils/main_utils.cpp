@@ -51,14 +51,14 @@ void mute_speaker(const int argc, void** argv, const char* argument) {
 }
 
 void print_label() {
-    printf("Guesser game by Ilya Kudryashov.\n");
+    printf("Equation differentiator and article generator by Ilya Kudryashov.\n");
     printf("Program uses binary tree to guess things.\n");
     printf("Build from\n%s %s\n", __DATE__, __TIME__);
     log_printf(ABSOLUTE_IMPORTANCE, "build info", "Build from %s %s.\n", __DATE__, __TIME__);
 }
 
-const char* get_input_file_name(const int argc, const char** argv) {
-    const char* file_name = NULL;
+const char* get_input_file_name(const int argc, const char** argv, const char* default_name) {
+    const char* file_name = default_name;
 
     for (int argument_id = 1; argument_id < argc; ++argument_id) {
         if (*argv[argument_id] == '-') continue;
@@ -69,8 +69,8 @@ const char* get_input_file_name(const int argc, const char** argv) {
     return file_name;
 }
 
-const char* get_output_file_name(const int argc, const char** argv) {
-    const char* file_name = NULL;
+const char* get_output_file_name(const int argc, const char** argv, const char* default_name) {
+    const char* file_name = default_name;
 
     bool enc_first_name = false;
     for (int argument_id = 1; argument_id < argc; ++argument_id) {
@@ -80,5 +80,5 @@ const char* get_output_file_name(const int argc, const char** argv) {
         else enc_first_name = true;
     }
 
-    return NULL;
+    return default_name;
 }

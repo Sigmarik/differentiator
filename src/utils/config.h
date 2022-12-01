@@ -1,7 +1,7 @@
 /**
  * @file config.h
  * @author Kudryashov Ilya (kudriashov.it@phystech.edu)
- * @brief List of constants used in main program.
+ * @brief List of constants used inside the main program.
  * @version 0.1
  * @date 2022-11-01
  * 
@@ -41,7 +41,7 @@ static const char* TRANSITION_PHRASES[] = {
     "It is obvious to a five-year-old that\n",
     "According to the not-an-easter-egg transition\n",
     "As Sun Tzu once said:\n",
-    "You should really reconsider reading this paper if it is'n obvious for you that\n",
+    "You should really reconsider reading this paper if it is'n obvious to you that\n",
     "We will later explain why\n",
     "Here goes a tight part where we for no apparent reason assume that\n",
     "Only the chosen one will understand that\n",

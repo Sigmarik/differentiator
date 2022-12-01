@@ -27,6 +27,7 @@ enum IMPORTANCES {
 #include <stdarg.h>
 
 #ifndef NDEBUG
+
 #ifndef NLOG_PRINT_LINE
 /**
  * @brief Print message to logs followed by call information.
@@ -51,6 +52,7 @@ enum IMPORTANCES {
     _log_printf(importance, tag, __VA_ARGS__);\
 } while(0)
 #endif
+
 #else
 /**
  * @brief (DISABLED) Print message to logs.
@@ -62,6 +64,11 @@ enum IMPORTANCES {
 #define log_printf(importance, tag, ...) do { } while(0)
 
 #endif
+
+#define log_dup(importance, tag, ...) do {      \
+    printf(__VA_ARGS__);                        \
+    log_printf(importance, tag, __VA_ARGS__);   \
+} while (0)
 
 /**
  * @brief Open log file or creates empty one.

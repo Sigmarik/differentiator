@@ -4,6 +4,8 @@
 #include <stdarg.h>
 #include <stdlib.h>
 
+#include "util/dbg/debug.h"
+
 int skip_to_char(FILE* file, const char target, char* const buffer, size_t limit) {
     if (file == NULL) return -1;
 
@@ -58,4 +60,23 @@ char* read_whole(const char* fname) {
     buffer[buf_size - 1] = '\0';
 
     return buffer;
+}
+
+char* dynamic_sprintf(const char* format, ...) {
+    va_list args;
+    va_list args_copy;
+    va_start(args, format);
+    va_copy(args_copy, args);
+
+    size_t length = (size_t)vsnprintf(NULL, 0, format, args_copy);
+
+    va_end(args_copy);
+
+    char* result = (char*) calloc(length + 1, sizeof(*result));
+    _LOG_FAIL_CHECK_(result, "error", ERROR_REPORTS, return NULL, &errno, ENOMEM);
+    vsnprintf(result, length + 1, format, args);
+
+    va_end(args);
+
+    return result;
 }

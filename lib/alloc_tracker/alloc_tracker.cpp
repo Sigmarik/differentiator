@@ -43,3 +43,8 @@ void dealloc(Allocation* allocation) {
         allocation->address = NULL;
     }
 }
+
+void free_variable(void** variable) {
+    free(*variable);
+    *variable = NULL;
+}

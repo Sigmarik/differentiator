@@ -78,18 +78,20 @@ void print_label();
  * 
  * @param argc argument count
  * @param argv argument values
+ * @param default_name default file name
  * @return const char* 
  */
-const char* get_input_file_name(const int argc, const char** argv);
+const char* get_input_file_name(const int argc, const char** argv, const char* default_name);
 
 /**
  * @brief Get the output file name from the list of command line arguments.
  * 
  * @param argc argument count
  * @param argv argument values
+ * @param default_name default file name
  * @return const char* 
  */
-const char* get_output_file_name(const int argc, const char** argv);
+const char* get_output_file_name(const int argc, const char** argv, const char* default_name);
 
 /**
  * @brief Read user input and do actions depending on if user entered yes or no.
