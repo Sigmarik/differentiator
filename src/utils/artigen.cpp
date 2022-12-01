@@ -10,8 +10,8 @@
 
 #include "config.h"
 
-#define init_buffer() static char formula_buffer[MAX_FORMULA_LENGTH] = "";  \
-    memset(formula_buffer, 0, sizeof(formula_buffer));                      \
+#define INIT_PRINT_BUFFER() static char formula_buffer[MAX_FORMULA_LENGTH] = "";    \
+    memset(formula_buffer, 0, sizeof(formula_buffer));                              \
     caret_t formula_caret = formula_buffer
 
 /**
@@ -84,7 +84,7 @@ void describe_differentiation(ArticleProject* article, const Equation* equation,
         ++cur_power;
     }
 
-    init_buffer();
+    INIT_PRINT_BUFFER();
 
     if (cur_power > 0) {
         FILL_PRINT_BUFFER(equation);
@@ -127,7 +127,7 @@ void describe_series(ArticleProject* article, const Equation* equation, double p
     _LOG_FAIL_CHECK_(Article_is_fine(article), "error", ERROR_REPORTS, return, &errno, EINVAL);
     _LOG_FAIL_CHECK_(!Equation_get_error(equation), "error", ERROR_REPORTS, return, &errno, EINVAL);
 
-    init_buffer();
+    INIT_PRINT_BUFFER();
 
     PUT("Let's first calculate equation derivatives.\\newline\n");
     describe_differentiation(article, equation, power);
@@ -189,7 +189,7 @@ void describe_tangent(ArticleProject* article, const Equation* equation, double 
     _LOG_FAIL_CHECK_(Article_is_fine(article), "error", ERROR_REPORTS, return, &errno, EINVAL);
     _LOG_FAIL_CHECK_(!Equation_get_error(equation), "error", ERROR_REPORTS, return, &errno, EINVAL);
 
-    init_buffer();
+    INIT_PRINT_BUFFER();
 
     double value = Equation_calculate(equation, point);
 

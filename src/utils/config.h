@@ -16,7 +16,7 @@
 
 static const int NUMBER_OF_OWLS = 10;
 
-static const size_t MAX_FORMULA_LENGTH = 1024;
+static const size_t MAX_FORMULA_LENGTH = 65536;
 
 static const size_t MAX_NAME_LENGTH = 1024;
 static const char DEFAULT_DB_NAME[] = "simple.math";
@@ -31,7 +31,8 @@ static const char ARTICLE_PREFIX[] = "\\documentclass{article}\n\n"
 "\\usepackage{pgfplots}\n\n"
 "\\title{Generated Article}\n\n"
 "\\begin{document}\n\n"
-"\\maketitle\n\n";
+"\\maketitle\n\n"
+"\\section{Function analysis}\n\n";
 
 static const char ARTICLE_POSTFIX[] = "\n\n\\end{document}\n";
 

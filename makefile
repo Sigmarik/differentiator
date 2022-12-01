@@ -19,7 +19,7 @@ CFLAGS = -I./ -D _DEBUG -ggdb3 -std=c++2a -O0 -Wall -Wextra -Weffc++\
 }integer-divide-by-zero,leak,nonnull-attribute,null,object-size,return,${strip \
 }returns-nonnull-attribute,shift,signed-integer-overflow,undefined,${strip \
 }unreachable,vla-bound,vptr\
--pie -Wlarger-than=65535 -Wstack-usage=8192
+-pie -Wlarger-than=65536 -Wstack-usage=8192
 
 BLD_FOLDER = build
 TEST_FOLDER = test

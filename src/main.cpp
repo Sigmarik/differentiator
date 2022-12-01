@@ -83,9 +83,15 @@ int main(const int argc, const char** argv) {
     Article_ctor(&article, "./");
     track_allocation(article, Article_dtor);
 
+    fprintf(article.storage.file, "\n\\subsection{Derivatives}\n\n");
+
     describe_differentiation(&article, equation, (unsigned int)max(0, differentiation_power));
 
+    fprintf(article.storage.file, "\n\\subsection{Series representation}\n\n");
+
     describe_series(&article, equation, series_point, (unsigned int)max(0, series_power));
+
+    fprintf(article.storage.file, "\n\\subsection{Tangent at point $X=%lg$}\n\n", series_point);
 
     describe_tangent(&article, equation, series_point);
 
