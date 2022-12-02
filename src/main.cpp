@@ -61,6 +61,8 @@ int main(const int argc, const char** argv) {
 
     char* source_equation = read_whole(f_name);
 
+    log_printf(STATUS_REPORTS, "status", "File content:\n%s\n", source_equation);
+
     srand((unsigned int)get_simple_hash(source_equation, source_equation + strlen(source_equation)));
 
     LexStack eq_lex_stack = lexify(source_equation);
@@ -91,7 +93,7 @@ int main(const int argc, const char** argv) {
 
     describe_series(&article, equation, series_point, (unsigned int)max(0, series_power));
 
-    fprintf(article.storage.file, "\n\\subsection{Tangent at point $X=%lg$}\n\n", series_point);
+    fprintf(article.storage.file, "\n\\subsection{Tangent at $X=%lg$}\n\n", series_point);
 
     describe_tangent(&article, equation, series_point);
 
