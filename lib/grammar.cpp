@@ -158,6 +158,26 @@ GRAM(parse_brackets) {
         if (stack.buffer[*caret].type != LEX_CL_BRACKET) CERROR("Expected closing bracket.\n");
         ++*caret;
     } else {
+        ASSIGN_AND_CHECK(value, parse_function(stack, caret));
+    }
+    return value;
+}
+
+GRAM(parse_function) {
+    CHECK_INPUT();
+    Equation* value = NULL;
+    LexType type = stack.buffer[*caret].type;
+    if (type == LEX_SIN || type == LEX_COS || type == LEX_LN) {
+        ++*caret;
+        if (stack.buffer[*caret].type == LEX_OP_BRACKET) {
+            ++*caret;
+            ASSIGN_AND_CHECK(value, parse_eq(stack, caret));
+            if (stack.buffer[*caret].type != LEX_CL_BRACKET) CERROR("Expected closing bracket.\n");
+            value = Equation_new(TYPE_OP, { .op = (Operator)type }, Equation_new(TYPE_CONST, {}, NULL, NULL), value);
+            ++*caret;
+        } else
+            CERROR("Expected opening bracket.\n");
+    } else if (type == LEX_NUM || type == LEX_VAR) {
         ASSIGN_AND_CHECK(value, parse_number(stack, caret));
     }
     return value;

@@ -49,7 +49,7 @@ static const char* TRANSITION_PHRASES[] = {
     "It is easy for me to type that\n",
     "You will need to learn for the exam that\n",
     "According to our previous calculations\n",
-    "Roses are red,\nI'm not really a dancer.\nIt is hard to explain,\nSo here is just the answer:\n",
+    "Roses are red,\\newline\nI'm not really a dancer.\\newline\nIt is hard to explain,\\newline\nSo here is just the answer:\\newline\n",
     "For well-known reason\n",
     "It is not hard to get that\n",
     "It took seven days for the God to create the Earth, so it should not take that long for you to understand that\n",

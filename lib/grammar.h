@@ -76,6 +76,9 @@ gram_function_t parse_pow;
 //* brackets = number | '('eq')'
 gram_function_t parse_brackets;
 
+//* function = number | ((sin|cos|ln)'('eq')')
+gram_function_t parse_function;
+
 //* number = std::double | std::alpha
 gram_function_t parse_number;
 

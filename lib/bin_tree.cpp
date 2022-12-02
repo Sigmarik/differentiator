@@ -133,7 +133,11 @@ void Equation_write_as_tex(const Equation* equation, caret_t* caret, int* const 
         break;
 
     case TYPE_CONST:
-        caret_printf(caret, "%lg", equation->value.dbl);
+        if (equation->value.dbl >= 0) {
+            caret_printf(caret, "%lg", equation->value.dbl);
+        } else {
+            caret_printf(caret, "(%lg)", equation->value.dbl);
+        }
         break;
 
     case TYPE_OP: {
