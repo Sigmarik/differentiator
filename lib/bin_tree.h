@@ -58,6 +58,15 @@ void Equation_dtor(Equation** node);
 void _Equation_dump_graph(const Equation* equation, unsigned int importance);
 
 /**
+ * @brief Write equation in formula format (for graphing purposes).
+ * 
+ * @param node tree node to write to the file
+ * @param caret write destination
+ * @param err_code variable to use as errno
+ */
+void Equation_write_as_formula(const Equation* equation, caret_t* caret, int* const err_code = &errno);
+
+/**
  * @brief Write equation in tex format.
  * 
  * @param node tree node to write to the file

@@ -123,6 +123,51 @@ void _Equation_dump_graph(const Equation* equation, unsigned int importance) {
     if (__cond) caret_printf(caret, right);             \
 } while (0)
 
+void Equation_write_as_formula(const Equation* equation, caret_t* caret, int* const err_code) {
+    _LOG_FAIL_CHECK_(!Equation_get_error(equation), "error", ERROR_REPORTS, return, err_code, EINVAL);
+    _LOG_FAIL_CHECK_(caret, "error", ERROR_REPORTS, return, err_code, EINVAL);
+
+    switch (equation->type) {
+    case TYPE_VAR:
+        caret_printf(caret, "%c", (char)equation->value.id);
+        break;
+
+    case TYPE_CONST:
+        caret_printf(caret, "(%lg)", equation->value.dbl);
+        break;
+
+    case TYPE_OP: {
+        switch (equation->value.op) {
+        case OP_SIN:
+        case OP_COS:
+            caret_printf(caret, "%s(deg", OP_TEXT_REPS[equation->value.op]);
+            in_brackets("(", { Equation_write_as_formula(equation->right, caret); }, "))", true);
+            break;
+        case OP_LN:
+            caret_printf(caret, "%s", OP_TEXT_REPS[equation->value.op]);
+            in_brackets("(", { Equation_write_as_formula(equation->right, caret); }, ")", true);
+            break;
+        case OP_ADD:
+        case OP_SUB:
+        case OP_MUL:
+        case OP_DIV:
+        case OP_POW:
+            in_brackets("(", { Equation_write_as_formula(equation->left, caret); }, ")", true);
+            caret_printf(caret, "%s", OP_TEXT_REPS[equation->value.op]);
+            in_brackets("(", { Equation_write_as_formula(equation->right, caret); }, ")", true);
+            break;
+        OP_SWITCH_END
+        }
+
+        break;
+    }
+    default:
+        log_printf(ERROR_REPORTS, "error", 
+            "Somehow NodeType equation->type had an incorrect value of %d.\n", equation->type);
+        break;
+    }
+}
+
 void Equation_write_as_tex(const Equation* equation, caret_t* caret, int* const err_code) {
     _LOG_FAIL_CHECK_(!Equation_get_error(equation), "error", ERROR_REPORTS, return, err_code, EINVAL);
     _LOG_FAIL_CHECK_(caret, "error", ERROR_REPORTS, return, err_code, EINVAL);
@@ -259,10 +304,10 @@ Equation* Equation_diff(const Equation* equation, const uintptr_t var_id, int* c
         case OP_SUB: return eq_sub(eq_dL, eq_dR);
 
         case OP_MUL: return eq_add(eq_mul(eq_dL, eq_cR), eq_mul(eq_cL, eq_dR));
-        case OP_DIV: return eq_div(eq_sub(eq_mul(eq_dL, eq_cR), eq_mul(eq_cL, eq_dR)), eq_pow(eq_cR, eq_const(2)));
+        case OP_DIV: return eq_div(eq_sub(eq_mul(eq_dL, eq_cR), eq_mul(eq_dR, eq_cL)), eq_pow(eq_cR, eq_const(2)));
 
-        case OP_SIN: return eq_mul(eq_cos(eq_cR), eq_dR);
-        case OP_COS: return eq_mul(eq_neg(eq_sin(eq_cR)), eq_dR);
+        case OP_SIN: return eq_mul(eq_dR, eq_cos(eq_cR));
+        case OP_COS: return eq_mul(eq_dR, eq_neg(eq_sin(eq_cR)));
 
         case OP_POW: return eq_mul(eq_pow(eq_cL, eq_sub(eq_cR, eq_const(1))),
                                    eq_add( eq_mul(eq_cR, eq_dL),  eq_mul(eq_mul(eq_cL, eq_dR), eq_ln(eq_cL)) ));
@@ -449,9 +494,9 @@ static void rm_useless(Equation* equation) {
             set_to_const(equation, 0.0);
         break;
     case OP_DIV:
-        if (is_equal(eq_R->value.dbl, 1.0))
+        if (eq_R->type == TYPE_CONST && is_equal(eq_R->value.dbl, 1.0))
             replace_node(equation, eq_L);
-        else if (is_equal(eq_L->value.dbl, 0.0))
+        else if (eq_L->type == TYPE_CONST && is_equal(eq_L->value.dbl, 0.0))
             set_to_const(equation, 0.0);
         break;
     case OP_POW:

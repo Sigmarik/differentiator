@@ -34,6 +34,10 @@ static const char ARTICLE_PREFIX[] = "\\documentclass{article}\n\n"
 "\\maketitle\n\n"
 "\\section{Function analysis}\n\n";
 
+#define ARTICLE_GRAPH_PREFIX_TEMPLATE "\\begin{tikzpicture}\n\\begin{axis}[xmin = %lf-3, xmax = %lf+3]\n"
+#define ARTICLE_GRAPH_SUFFIX "\\end{axis}\n\\end{tikzpicture}\n"
+#define ARTICLE_GRAPH_TEMPLATE "    \\addplot[domain=%lf-3:%lf+3,samples=200,smooth,thick,%s]\n        {%s};\n"
+
 static const char ARTICLE_POSTFIX[] = "\n\n\\end{document}\n";
 
 static const char* TRANSITION_PHRASES[] = {

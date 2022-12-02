@@ -205,13 +205,29 @@ void describe_tangent(ArticleProject* article, const Equation* equation, double 
     FILL_PRINT_BUFFER(deriv);
     PUT("%s=%lg\\]\n", formula_buffer, slope_k);
 
+    double constant = 0.0;
+
     if (isinf(slope_k)) {
         PUT("As we can see, derivative at this point is reaching infinity, "
             "meaning, that tangent at this point is a vertical line $x=%lg$", point);
     } else {
-        double constant = value - slope_k * point;
-        PUT("Using this data we can assume that the tangent at given point is $y=%lgx%+lg$", slope_k, constant);
+        constant = value - slope_k * point;
+        PUT("Using this data we can assume that the tangent at given point is $y=%lgx%+lg$\\newline\n\n", slope_k, constant);
     }
+
+    PUT(ARTICLE_GRAPH_PREFIX_TEMPLATE, point, point);
+
+    formula_caret = formula_buffer;
+    Equation_write_as_formula(equation, &formula_caret, &errno);
+    *formula_caret = '\0';
+    PUT(ARTICLE_GRAPH_TEMPLATE, point, point, "blue", formula_buffer);
+
+    const char* tangent_formula = dynamic_sprintf("%lf*x%+lf", slope_k, constant);
+    PUT(ARTICLE_GRAPH_TEMPLATE, point, point, "red", tangent_formula);
+    free((void*)tangent_formula);
+    tangent_formula = NULL;
+
+    PUT(ARTICLE_GRAPH_SUFFIX);
 
     Equation_dtor(&deriv);
 }
