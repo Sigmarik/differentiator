@@ -63,7 +63,7 @@ static const char* TRANSITION_PHRASES[] = {
     "At this point we would like to remind you to call your parents "
     "and drink a glass of water to stay hydrated. If you did this, we shall continue with\n",
     "As the void tells us\n",
-    "Th3re y is a *cat o_n my ke&board!\n",
+    "Th3re y is a *cat o\\_n my ke\\&board!\n",
     "I don't even care what to write in this article, so here a nice-looking formula:\n",
     "You shall not pass through the transition\n",
     "You will get a free cake after completing the mathematical test of understanding that\n",
