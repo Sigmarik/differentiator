@@ -40,14 +40,14 @@ enum ERRORS {
  * @param errcode variable to write errtype in
  * @param arrtype error code
  */
-#define _LOG_FAIL_CHECK_(condition, tag, importance, action, errcode, errtype)                                           \
-do {                                                                                                                    \
-    if (!(condition)) {                                                                                                  \
-        int* errptr = errcode;                                                                                          \
-        if (errptr) *(errptr) = (errtype);                              \
-        log_printf(importance, tag, "Equation `%s` in file %s at line %d failed.\n", #condition, __FILE__, __LINE__);\
-        action;                                                                                                         \
-    }                                                                                                                   \
+#define _LOG_FAIL_CHECK_(condition, tag, importance, action, errcode, errtype)                                        \
+do {                                                                                                                  \
+    if (!(condition)) {                                                                                               \
+        int* errptr = errcode;                                                                                        \
+        if (errptr) *(errptr) = (errtype);                                                                            \
+        log_printf(importance, tag, "Equation `%s` in file %s at line %d failed.\n", #condition, __FILE__, __LINE__); \
+        action;                                                                                                       \
+    }                                                                                                                 \
 } while(0)
 
 

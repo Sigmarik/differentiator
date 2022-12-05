@@ -212,7 +212,8 @@ void describe_tangent(ArticleProject* article, const Equation* equation, double 
             "meaning, that tangent at this point is a vertical line $x=%lg$", point);
     } else {
         constant = value - slope_k * point;
-        PUT("Using this data we can assume that the tangent at given point is $y=%lgx%+lg$\\newline\n\n", slope_k, constant);
+        PUT("Using this data we can assume that the tangent at given point is $y=%lgx%+lg$\\newline\n\n",
+            slope_k, constant);
     }
 
     PUT(ARTICLE_GRAPH_PREFIX_TEMPLATE, point, point);

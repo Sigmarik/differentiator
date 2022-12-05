@@ -32,9 +32,10 @@ struct MemorySegment {
 void MemorySegment_ctor(MemorySegment* segment);
 void MemorySegment_dtor(MemorySegment* segment);
 
-#define MemorySegment_dump(segment, importance) do { \
-    log_printf(importance, "dump", "Memory segment at %p. Size: %ld Content: %p\n", segment, (segment)->size, (segment)->content); \
-    _MemorySegment_dump(segment, importance); \
+#define MemorySegment_dump(segment, importance) do {                                \
+    log_printf(importance, "dump", "Memory segment at %p. Size: %ld Content: %p\n", \
+                                    segment, (segment)->size, (segment)->content);  \
+    _MemorySegment_dump(segment, importance);                                       \
 } while (0)
 
 void _MemorySegment_dump(MemorySegment* segment, unsigned int importance);

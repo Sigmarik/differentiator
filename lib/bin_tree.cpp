@@ -207,13 +207,15 @@ void Equation_write_as_tex(const Equation* equation, caret_t* caret, int* const 
 
         case OP_MUL:
             in_brackets("(", { Equation_write_as_tex(equation->left, caret); }, ")",
-                equation->left->type == TYPE_OP && OP_PRIORITY[equation->left->value.op] < OP_PRIORITY[equation->value.op]);
+                equation->left->type == TYPE_OP &&
+                OP_PRIORITY[equation->left->value.op] < OP_PRIORITY[equation->value.op]);
 
             if (equation->right->type == TYPE_CONST)
                 caret_printf(caret, "\\cdot");
 
             in_brackets("(", { Equation_write_as_tex(equation->right, caret); }, ")",
-                equation->right->type == TYPE_OP && OP_PRIORITY[equation->right->value.op] < OP_PRIORITY[equation->value.op]);
+                equation->right->type == TYPE_OP &&
+                OP_PRIORITY[equation->right->value.op] < OP_PRIORITY[equation->value.op]);
             
             break;
 
@@ -227,12 +229,14 @@ void Equation_write_as_tex(const Equation* equation, caret_t* caret, int* const 
         case OP_ADD:
         case OP_SUB:
             in_brackets("(", { Equation_write_as_tex(equation->left, caret); }, ")",
-                equation->left->type == TYPE_OP && OP_PRIORITY[equation->left->value.op] < OP_PRIORITY[equation->value.op]);
+                equation->left->type == TYPE_OP &&
+                OP_PRIORITY[equation->left->value.op] < OP_PRIORITY[equation->value.op]);
 
             caret_printf(caret, "%s", OP_TEXT_REPS[equation->value.op]);
 
             in_brackets("(", { Equation_write_as_tex(equation->right, caret); }, ")",
-                equation->right->type == TYPE_OP && OP_PRIORITY[equation->right->value.op] < OP_PRIORITY[equation->value.op]);
+                equation->right->type == TYPE_OP &&
+                OP_PRIORITY[equation->right->value.op] < OP_PRIORITY[equation->value.op]);
             
             break;
         OP_SWITCH_END
@@ -275,7 +279,9 @@ Equation* Equation_copy(const Equation* equation) {
 
 static inline Equation* eq_const(double val) { return Equation_new(TYPE_CONST, { .dbl = val }, NULL, NULL); }
 static inline Equation* eq_var(char id) { return Equation_new(TYPE_VAR,    { .id = (unsigned long)id }, NULL, NULL); }
-static inline Equation* eq_op(Operator op, Equation* left, Equation* right) { return Equation_new(TYPE_OP, { .op = op }, left, right); }
+static inline Equation* eq_op(Operator op, Equation* left, Equation* right) {
+    return Equation_new(TYPE_OP, { .op = op }, left, right); 
+}
 
 static inline Equation* eq_add(Equation* left, Equation* right) { return eq_op(OP_ADD, left, right); }
 static inline Equation* eq_sub(Equation* left, Equation* right) { return eq_op(OP_SUB, left, right); }
@@ -326,14 +332,6 @@ Equation* Equation_diff(const Equation* equation, const uintptr_t var_id, int* c
 
 static bool eq_t_const(Equation* eq) { return eq->type == TYPE_CONST;  }
 static bool eq_t_op(Equation* eq)    { return eq->type == TYPE_OP;     }
-
-//* Unused function
-//static bool eq_t_var(Equation* eq)   { return eq->type == TYPE_VAR;    }
-
-//* Unused functions
-// static bool eq_is_val(Equation* eq, double val)    { return eq->type == TYPE_CONST && is_equal(eq->value.dbl, val); }
-// static bool eq_is_op(Equation* eq, Operator op)    { return eq->type == TYPE_OP && eq->value.op == op; }
-// static bool eq_is_var(Equation* eq, char var_id)   { return eq->type == TYPE_VAR && eq->value.id == (unsigned char)var_id; }
 
 #define eq_L ( equation->left )
 #define eq_R ( equation->right )
@@ -389,7 +387,8 @@ double Equation_calculate(const Equation* equation, const double x_value, int* c
 }
 
 void recursive_graph_dump(const Equation* equation, FILE* file, int* const err_code) {
-    _LOG_FAIL_CHECK_(!(Equation_get_error(equation) & (~TREE_INV_CONNECTIONS)), "error", ERROR_REPORTS, return, err_code, EINVAL);
+    _LOG_FAIL_CHECK_(!(Equation_get_error(equation) & (~TREE_INV_CONNECTIONS)), 
+        "error", ERROR_REPORTS, return, err_code, EINVAL);
     _LOG_FAIL_CHECK_(file, "error", ERROR_REPORTS, return, err_code, ENOENT);
 
     if (!equation || !file) return;

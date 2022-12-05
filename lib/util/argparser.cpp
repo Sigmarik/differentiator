@@ -39,7 +39,10 @@ void parse_args(const int argc, const char** argv, const int action_c, const str
                 call->parameters, arg + 2);
         }  //   number of chars in "--" ^
 
-        if (strcmp(arg, "--help") == 0 || strcmp(arg, "-help") == 0 || strcmp(arg, "-h") == 0 || strcmp(arg, "-H") == 0) {
+        if (    strcmp(arg, "--help") == 0 || 
+                strcmp(arg, "-help") == 0 || 
+                strcmp(arg, "-h") == 0 || 
+                strcmp(arg, "-H") == 0) {
             printf("Valid tags:\n\n");
             printf("-H -h -help --help - print this message.\n\n");
             for (int tag_id = 0; tag_id < action_c; tag_id++) {

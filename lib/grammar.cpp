@@ -42,8 +42,9 @@ void LexStack_push(LexStack* stack, Lex lexeme) {
         }
     }
     stack->buffer[stack->size++] = lexeme;
-    log_printf(STATUS_REPORTS, "status", "Pushed lexeme of type %d {.value = { .ch = %d, .dbl = %lg }} at \"%-10s\" to index %ld.\n",
-               (int) lexeme.type, (int) lexeme.value.ch, lexeme.value.dbl, lexeme.address, (long int)stack->size - 1);
+    log_printf(STATUS_REPORTS, "status", "Pushed lexeme of type %d {.value = { .ch = %d, .dbl = %lg }} "
+                "at \"%-10s\" to index %ld.\n",
+                (int) lexeme.type, (int) lexeme.value.ch, lexeme.value.dbl, lexeme.address, (long int)stack->size - 1);
 }
 
 
@@ -190,7 +191,8 @@ GRAM(parse_number) {
         ASSIGN_AND_CHECK(value, Equation_new(TYPE_CONST, { .dbl = stack.buffer[*caret].value.dbl }, NULL, NULL));
         ++*caret;
     } else if (stack.buffer[*caret].type == LEX_VAR) {
-        ASSIGN_AND_CHECK(value, Equation_new(TYPE_VAR, { .id = (unsigned long)stack.buffer[*caret].value.ch }, NULL, NULL));
+        ASSIGN_AND_CHECK(value, Equation_new(TYPE_VAR, { .id = (unsigned long)stack.buffer[*caret].value.ch },
+            NULL, NULL));
         ++*caret;
     } else {
         CERROR("Expected number or variable, got lexeme of type %d instead.\n", (int)stack.buffer[*caret].type);
