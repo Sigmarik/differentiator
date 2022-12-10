@@ -22,9 +22,6 @@ struct Allocation {
     Allocation* prev = NULL;
 };
 
-// TODO: you can make a tracking_malloc that would add this Allocation thing
-//       as a header to your allocation, and will therfore track it.
-
 struct AllocTracker {
     Allocation* last_allocation = NULL;
 };

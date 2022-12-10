@@ -99,7 +99,7 @@ LexStack lexify(const char* line) {
 
 GRAM(parse) {
     Equation* value = NULL;
-    ASSIGN_AND_CHECK(value, parse_eq(stack, caret));
+    ASSIGN_AND_CHECK(value, parse_expr(stack, caret));
 
     if (stack.buffer[*caret].type != LEX_OP_TERM) {
         CERROR("Redundant lexeme detected after equation parsing has ended.\n");
@@ -108,13 +108,12 @@ GRAM(parse) {
     return value;
 }
 
-GRAM(parse_eq) {
+GRAM(parse_expr) {
     CHECK_INPUT();
     Equation* value = NULL;
     ASSIGN_AND_CHECK(value, parse_mult(stack, caret));
     while (stack.buffer[*caret].type == LEX_PLUS || stack.buffer[*caret].type == LEX_MINUS) {
-        LexType type = stack.buffer[*caret].type;
-        ++*caret;
+        LexType type = stack.buffer[*caret++].type;
         Equation* next_arg = NULL;
         ASSIGN_AND_CHECK(next_arg, parse_mult(stack, caret));
         value = Equation_new(TYPE_OP, { .op = type==LEX_PLUS ? OP_ADD : OP_SUB }, value, next_arg);
@@ -127,8 +126,7 @@ GRAM(parse_mult) {
     Equation* value = NULL;
     ASSIGN_AND_CHECK(value, parse_pow(stack, caret));
     while (stack.buffer[*caret].type == LEX_MUL || stack.buffer[*caret].type == LEX_DIV) {
-        LexType type = stack.buffer[*caret].type;  // TODO: Too similar to the thing above. Can you fix it?
-        ++*caret;
+        LexType type = stack.buffer[*caret++].type;
         Equation* next_arg = NULL;
         ASSIGN_AND_CHECK(next_arg, parse_pow(stack, caret));
         value = Equation_new(TYPE_OP, { .op = type==LEX_MUL ? OP_MUL : OP_DIV }, value, next_arg);
@@ -155,7 +153,7 @@ GRAM(parse_brackets) {
     Equation* value = NULL;
     if (stack.buffer[*caret].type == LEX_OP_BRACKET) {
         ++*caret;
-        ASSIGN_AND_CHECK(value, parse_eq(stack, caret));
+        ASSIGN_AND_CHECK(value, parse_expr(stack, caret));
         if (stack.buffer[*caret].type != LEX_CL_BRACKET) CERROR("Expected closing bracket.\n");
         ++*caret;
     } else {
@@ -172,7 +170,7 @@ GRAM(parse_function) {
         ++*caret;
         if (stack.buffer[*caret].type == LEX_OP_BRACKET) {
             ++*caret;
-            ASSIGN_AND_CHECK(value, parse_eq(stack, caret));
+            ASSIGN_AND_CHECK(value, parse_expr(stack, caret));
             if (stack.buffer[*caret].type != LEX_CL_BRACKET) CERROR("Expected closing bracket.\n");
             value = Equation_new(TYPE_OP, { .op = (Operator)type }, Equation_new(TYPE_CONST, {}, NULL, NULL), value);
             ++*caret;

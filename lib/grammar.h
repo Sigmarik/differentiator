@@ -58,28 +58,29 @@ void LexStack_push(LexStack* stack, Lex lexeme);
 
 LexStack lexify(const char* line);
 
-
-typedef Equation* gram_function_t(const LexStack stack, int* caret);
+#define GRAM_FUNCTION(name) Equation* name(const LexStack stack, int* caret);
 
 //* G = eq
-gram_function_t parse; 
+GRAM_FUNCTION(parse); 
 
 //* eq = mult ([+-]mult)*
-gram_function_t parse_eq;
+GRAM_FUNCTION(parse_expr);
 
 //* mult = pow ([*/]pow)*
-gram_function_t parse_mult;
+GRAM_FUNCTION(parse_mult);
 
 //* pow = brackets ([^]brackets)*
-gram_function_t parse_pow;
+GRAM_FUNCTION(parse_pow);
 
 //* brackets = number | '('eq')'
-gram_function_t parse_brackets;
+GRAM_FUNCTION(parse_brackets);
 
 //* function = number | ((sin|cos|ln)'('eq')')
-gram_function_t parse_function;
+GRAM_FUNCTION(parse_function);
 
 //* number = std::double | std::alpha
-gram_function_t parse_number;
+GRAM_FUNCTION(parse_number);
+
+#undef GRAM_FUNCTION
 
 #endif
